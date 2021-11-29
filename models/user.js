@@ -53,26 +53,19 @@ module.exports = function (sequelize, DataTypes) {
     remember_token: {
       type: DataTypes.STRING(255)
     },
-    created_at: {
-      type: DataTypes.DATE,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-    },
-    deleted_at: {
-      type: DataTypes.DATE,
+    role_id: {
+      type: DataTypes.INTEGER(10).UNSIGNED,
+      allowNull: false,
+      references: {
+        model: "roles",
+        key: "id",
+      },
     },
   },
     {
       tableName: "users",
-      timestamps: false,
-    }, {
-    classMethods: {
-      // associate: function(models) {
-      //   Todo.belongsTo(models.User);
-      // }
-    },
-  });
+      timestamps: true,
+    });
   User.beforeCreate(async (user, options) => {
     const salt = await bcrypt.genSalt(10);
     console.log(salt, user.password);
@@ -82,10 +75,9 @@ module.exports = function (sequelize, DataTypes) {
   User.prototype.checkPassword = async function (password) {
     return await bcrypt.compare(password, this.password);
   }
-  User.prototype.getJsonWebToken= function () {
+  User.prototype.getJsonWebToken = function () {
     const token = jwt.sign(
-      // { id: this._id, role: this.role },
-      {id:this.dataValues.id},
+      { id: this.dataValues.id, roleId: this.dataValues.role_id },
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRESIN,

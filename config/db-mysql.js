@@ -25,7 +25,10 @@ const sequelize = new Sequelize(
 );
 
 const models = [
-  require("../models/sequelize/user"),
+  require("../models/user"),
+  require("../models/roles"),
+  require("../models/permissions"),
+  require("../models/roleHasPermissions")
 ];
 
 models.forEach((model) => {

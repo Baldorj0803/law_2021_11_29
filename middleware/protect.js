@@ -5,7 +5,7 @@ const MyError = require("../utils/myError");
 exports.protect = asyncHandler(async (req, res, next) => {
   if (!req.headers.authorization) {
     throw new MyError(
-      "Энэ үйлдлийг хийхэд таны эрх хүрэхгүй байна. Та эхлээд логин хийнэ үү. Authorization header-ээр токеноо дамжуулна уу.",
+      "Та эхлээд логин хийнэ үү. Authorization header-ээр токеноо дамжуулна уу.",
       401
     );
   }
@@ -18,23 +18,27 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   const tokenObj = jwt.verify(token, process.env.JWT_SECRET);
 
-  console.log(tokenObj);
+  // console.log(tokenObj);
 
-  // req.userId = tokenObj.id;
-  // req.userRole = tokenObj.role;
+  req.userId = tokenObj.id;
+  req.roleId = tokenObj.roleId;
 
   next();
 });
 
-exports.authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.userRole)) {
-      throw new MyError(
-        "Таны эрх [" + req.userRole + "] энэ үйлдлийг гүйцэтгэхэд хүрэлцэхгүй!",
-        403
-      );
-    }
+exports.authorize = asyncHandler(async (req, res, next) => {
+  let endPoint = req.originalUrl.replace(req.params[Object.keys(req.params)[0]],'')
+  q = "select * from role_has_permissions rp  left join permissions p on  rp.permission_id = p.id where rp.role_id=" + req.roleId+" and p.url='"+endPoint+"'"
 
-    next();
-  };
-};
+  const [uResult, uMeta] = await req.db.sequelize.query(q);
+
+  if(uResult.length===0){
+    throw new MyError(
+      "Энэ үйлдлийг хийхэд таны эрх хүрэхгүй байна.",
+      401
+    );
+  }
+
+
+  next()
+});

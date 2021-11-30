@@ -1,12 +1,12 @@
 const express = require("express");
 const dotenv = require("dotenv");
-var path = require("path");
-var rfs = require("rotating-file-stream");
+const path = require("path");
+const rfs = require("rotating-file-stream");
 const colors = require("colors");
 const errorHandler = require("./middleware/error");
-var morgan = require("morgan");
+const morgan = require("morgan");
 const logger = require("./middleware/logger");
-const fileupload = require("express-fileupload");
+const cors = require('cors')
 // Router оруулж ирэх
 const usersRoutes = require("./routes/users");
 const injectDb = require("./middleware/injectDb");
@@ -25,9 +25,22 @@ var accessLogStream = rfs.createStream("access.log", {
   path: path.join(__dirname, "log"),
 });
 
+var whitelist = ['http://localhost:3000']
+var corsOptions = {
+  origin: function (origin, callback) {
+    console.log(origin)
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
 // Body parser
 app.use(express.json());
-app.use(fileupload());
+app.use(cors());
+// app.use(cors(corsOptions));
 app.use(logger);
 app.use(injectDb(db));
 app.use(morgan("combined", { stream: accessLogStream }));

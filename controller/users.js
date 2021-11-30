@@ -46,13 +46,13 @@ exports.login = asyncHandler(async (req, res, next) => {
 	}
 
 	if (user.password) user.password = null;
-
-  console.log(user.getJsonWebToken())
+	if (user.role_id) user.role_id = null;
 
 	res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: user.getJsonWebToken(),
+    data: user,
+    token:user.getJsonWebToken(),
 	});
 });
 
@@ -123,7 +123,9 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
-
+  //password талбарыг дамжуулахгүй
+  query["attributes"]={exclude: ['password']}
+  console.log(query)
   const users = await req.db.users.findAll(query);
 
   res.status(200).json({

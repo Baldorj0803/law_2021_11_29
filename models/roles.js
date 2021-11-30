@@ -2,7 +2,7 @@
 module.exports = function (sequelize, DataTypes) {
   let Roles = sequelize.define('roles', {
     id: {
-        type: DataTypes.INTEGER(10).UNSIGNED,
+      type: DataTypes.INTEGER(10).UNSIGNED,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,

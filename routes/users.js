@@ -14,10 +14,10 @@ const router = express.Router();
 
 //"/api/v1/users"
 router.route("/login").post(login);
+router.route("/create").post(createUser);
 router.use(protect);
 router.route('/').get(getUsers);
 router.route("/:id").get(getUser);
-router.route("/create").post(createUser);
 router.route("/update/:id").post(authorize,updateUser);
 router.route("/delete/:id").post(deleteUser);
 

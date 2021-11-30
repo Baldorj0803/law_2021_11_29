@@ -28,7 +28,11 @@ const models = [
   require("../models/user"),
   require("../models/roles"),
   require("../models/permissions"),
-  require("../models/roleHasPermissions")
+  require("../models/roleHasPermissions"),
+  require("../models/organizations"),
+  require("../models/organization_levels"),
+  require("../models/workflows"),
+  require("../models/workflow_templates"),
 ];
 
 models.forEach((model) => {

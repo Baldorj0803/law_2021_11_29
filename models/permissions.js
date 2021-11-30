@@ -1,4 +1,3 @@
-
 module.exports = function (sequelize, DataTypes) {
   let Roles = sequelize.define('permissions', {
     id: {
@@ -14,14 +13,32 @@ module.exports = function (sequelize, DataTypes) {
     description: {
       type: DataTypes.STRING(255)
     },
-    guard_name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
+    route: {
+      type: DataTypes.STRING(100)
     },
-    url:{
-      type:DataTypes.STRING(255),
-      allowNull:false
-    }
+    isAdd: {
+      type:DataTypes.ENUM,
+      values:["0","1"],
+      defaultValue:"0"
+       
+    },
+    isDelete: {
+      type:DataTypes.ENUM,
+      values:["0","1"],
+      defaultValue:"0"
+       
+    },
+    isEdit: {
+      type:DataTypes.ENUM,
+      values:["0","1"],
+      defaultValue:"0"
+       
+    },
+    isView: {
+      type:DataTypes.ENUM,
+      values:["0","1"],
+      defaultValue:"0"
+    },
   },
     {
       tableName: "permissions",

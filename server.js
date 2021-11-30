@@ -9,6 +9,7 @@ const logger = require("./middleware/logger");
 const cors = require('cors')
 // Router оруулж ирэх
 const usersRoutes = require("./routes/users");
+const rolesRoutes = require("./routes/roles");
 const injectDb = require("./middleware/injectDb");
 
 // Аппын тохиргоог process.env рүү ачаалах
@@ -45,6 +46,7 @@ app.use(logger);
 app.use(injectDb(db));
 app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1/users", usersRoutes);
+app.use("/api/v1/roles", rolesRoutes);
 app.use(errorHandler);
 
 // db.user.belongsToMany(db.book, { through: db.comment });

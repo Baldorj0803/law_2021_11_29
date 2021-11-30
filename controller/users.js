@@ -25,35 +25,37 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
 //login
 exports.login = asyncHandler(async (req, res, next) => {
-	//email password орж ирсэн эсэхийг шалгах
-	const { email, password } = req.body;
-	if (!email || !password) {
-		throw new Error("Имэйл болон нууц үгээ дамжуулна уу", 400);
-	}
+  //email password орж ирсэн эсэхийг шалгах
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new Error("Имэйл болон нууц үгээ дамжуулна уу", 400);
+  }
 
-	//Имэйл  хайх
+  //Имэйл  хайх
   let user = await req.db.users.findOne({ where: { email: req.body.email } })
 
-	if (!user) {
+  if (!user) {
     throw new Error("Имэйл болон нууц үг буруу байна", 401);
   }
 
-	//нууц үг шалгах
-	const ok = await user.checkPassword(password);
+  //нууц үг шалгах
+  const ok = await user.checkPassword(password);
 
-	if (!ok) {
-		throw new Error("Имэйл болон нууц үг буруу байнаa", 401);
-	}
+  if (!ok) {
+    throw new Error("Имэйл болон нууц үг буруу байнаa", 401);
+  }
 
-	if (user.password) user.password = null;
-	if (user.role_id) user.role_id = null;
+  /* !!! token авсны дараа role ийг null болгох  */
+  let token = user.getJsonWebToken();
+  if (user.password) user.password = null;
+  if (user.role_id) user.role_id = null;
 
-	res.status(200).json({
+  res.status(200).json({
     code: res.statusCode,
     message: "success",
     data: user,
-    token:user.getJsonWebToken(),
-	});
+    token
+  });
 });
 
 
@@ -124,7 +126,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
       ]);
   }
   //password талбарыг дамжуулахгүй
-  query["attributes"]={exclude: ['password']}
+  query["attributes"] = { exclude: ['password'] }
   console.log(query)
   const users = await req.db.users.findAll(query);
 

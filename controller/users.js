@@ -2,7 +2,63 @@
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
+const { Op } = require("sequelize");
+const { query } = require("express");
 
+
+exports.getUsers = asyncHandler(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 4;
+  const sort = req.query.sort;
+  let select = req.query.select;
+
+  if (select) {
+    select = select.split(" ");
+  }
+
+  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+
+  let query={}
+  if (req.query) {
+    let key = Object.keys(req.query)
+    let value = Object.values(req.query)
+    query.where = {}
+    key.map((k, i) => {
+      query.where[k]={}
+      query.where[k][Op.like] = `%${value[i]}%`
+    })
+  }
+
+  const pagination = await paginate(page, limit, req.db.users,query);
+
+   query= {...query, offset: pagination.start - 1, limit };
+
+  
+
+  if (select) {
+    query.attributes = select;
+  }
+
+  if (sort) {
+    query.order = sort
+      .split(" ")
+      .map((el) => [
+        el.charAt(0) === "-" ? el.substring(1) : el,
+        el.charAt(0) === "-" ? "DESC" : "ASC",
+      ]);
+  }
+  //password талбарыг дамжуулахгүй
+  query["attributes"] = { exclude: ['password'] }
+
+  const users = await req.db.users.findAll(query);
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    data: users,
+    pagination,
+  });
+});
 
 //register
 exports.createUser = asyncHandler(async (req, res, next) => {
@@ -89,52 +145,6 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: user,
-  });
-});
-
-
-exports.getUsers = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 4;
-  const sort = req.query.sort;
-  let select = req.query.select;
-
-  if (select) {
-    select = select.split(" ");
-  }
-
-  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
-
-  const pagination = await paginate(page, limit, req.db.users);
-
-  let query = { offset: pagination.start - 1, limit };
-
-  if (req.query) {
-    query.where = req.query;
-  }
-
-  if (select) {
-    query.attributes = select;
-  }
-
-  if (sort) {
-    query.order = sort
-      .split(" ")
-      .map((el) => [
-        el.charAt(0) === "-" ? el.substring(1) : el,
-        el.charAt(0) === "-" ? "DESC" : "ASC",
-      ]);
-  }
-  //password талбарыг дамжуулахгүй
-  query["attributes"] = { exclude: ['password'] }
-  console.log(query)
-  const users = await req.db.users.findAll(query);
-
-  res.status(200).json({
-    code: res.statusCode,
-    message: "success",
-    data: users,
-    pagination,
   });
 });
 

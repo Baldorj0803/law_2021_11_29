@@ -6,7 +6,7 @@ const paginate = require("../utils/paginate");
 
 exports.getRoles = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 4;
+  const limit = parseInt(req.query.limit) ||100;
   const sort = req.query.sort;
   let select = req.query.select;
 
@@ -62,7 +62,7 @@ exports.updateRole = asyncHandler(async (req, res, next) => {
   let user = await req.db.roles.findByPk(req.params.id);
 
   if (!user) {
-    throw new MyError(`${req.params.id} id тэй хэрэглэгч олдсонгүй.`, 400);
+    throw new MyError(`${req.params.id} id тэй role олдсонгүй.`, 400);
   }
 
   user = await user.update(req.body);
@@ -90,6 +90,3 @@ exports.deleteRole = asyncHandler(async (req, res, next) => {
     data: role,
   });
 });
-
-
-

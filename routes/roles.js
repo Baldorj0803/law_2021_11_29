@@ -18,7 +18,7 @@ router.use(protect);
 // router.route("/delete/:id").post(authorize,deleteRole);
 router.route('/').get(getRoles);
 router.route('/create').post(createRole);
-router.route("/update/:id").post(authorize,updateRole);
+router.route("/update/:id").post(updateRole);
 router.route("/delete/:id").post(deleteRole);
 
 

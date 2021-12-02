@@ -53,7 +53,7 @@ module.exports = function (sequelize, DataTypes) {
     remember_token: {
       type: DataTypes.STRING(255)
     },
-    role_id: {
+    roleId: {
       type: DataTypes.INTEGER(10).UNSIGNED,
       allowNull: false,
       references: {

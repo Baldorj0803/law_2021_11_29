@@ -11,6 +11,7 @@ const cors = require('cors')
 const usersRoutes = require("./routes/users");
 const rolesRoutes = require("./routes/roles");
 const orgRoutes = require("./routes/organizations");
+const permissionRoutes = require("./routes/permissions");
 const injectDb = require("./middleware/injectDb");
 
 // Аппын тохиргоог process.env рүү ачаалах
@@ -49,10 +50,25 @@ app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/organizations", orgRoutes);
+app.use("/api/v1/permissions", permissionRoutes);
 app.use(errorHandler);
 
 // db.user.belongsToMany(db.book, { through: db.comment });
 // db.book.belongsToMany(db.user, { through: db.comment });
+
+
+db.roles.belongsToMany(db.permissions, { through: db.role_has_permissions });
+db.permissions.belongsToMany(db.roles, { through: db.role_has_permissions });
+
+db.permissions.hasMany(db.role_has_permissions);
+db.role_has_permissions.belongsTo(db.permissions);
+
+db.roles.hasMany(db.role_has_permissions);
+db.role_has_permissions.belongsTo(db.roles)
+
+// db.users.belongsTo(db.roles)
+db.roles.hasMany(db.users)
+db.users.belongsTo(db.roles);
 
 // db.user.hasMany(db.comment);
 // db.comment.belongsTo(db.user);

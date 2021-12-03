@@ -25,14 +25,23 @@ const sequelize = new Sequelize(
 );
 
 const models = [
-  require("../models/user"),
+  require("../models/organization_levels"),
   require("../models/roles"),
   require("../models/permissions"),
-  require("../models/roleHasPermissions"),
+  require("../models/ranges"),
+  require("../models/responses"),
+  require("../models/status"),
+  require("../models/form_templates"),
+  require("../models/item_types"),
+  require("../models/company"),
+  require("../models/req_status"),
   require("../models/organizations"),
-  require("../models/organization_levels"),
+  require("../models/roleHasPermissions"),
   require("../models/workflows"),
+  require("../models/user"),
   require("../models/workflow_templates"),
+  require("../models/items"),
+  require("../models/request"),
 ];
 
 models.forEach((model) => {

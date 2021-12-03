@@ -24,12 +24,7 @@ module.exports = function (sequelize, DataTypes) {
                 model: "organization_levels",
                 key: "id",
               },
-        },
-        order: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            allowNull: false,
-            defaultValue: 0
-        },
+        }
     },
         {
             tableName: "organizations",

@@ -2,7 +2,7 @@
 module.exports = function (sequelize, DataTypes) {
     let work_temp = sequelize.define('workflow_templates', {
         id: {
-            type: DataTypes.BIGINT(20).UNSIGNED,
+            type: DataTypes.INTEGER(10).UNSIGNED,
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
@@ -43,10 +43,14 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.INTEGER(10).UNSIGNED,
             defaultValue: 0,
         },
-        is_active: {
+        status: {
             type: DataTypes.INTEGER(10).UNSIGNED,
-            defaultValue: 1,
-        },
+            allowNull: false,
+            references: {
+                model: "status",
+                key: "id",
+              },
+        }
     },
         {
             tableName: "workflow_templates",

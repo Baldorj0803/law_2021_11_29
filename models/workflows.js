@@ -19,16 +19,14 @@ module.exports = function (sequelize, DataTypes) {
             charset: 'utf8',
             collate: 'utf8_general_ci'
         },
-        group: {
+        rangeId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             allowNull: false,
-            defaultValue:1
-        },
-        is_active: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            allowNull: false,
-            defaultValue:1
-        },
+            references: {
+                model: "ranges",
+                key: "id",
+              },
+        }
     },
         {
             tableName: "workflows",

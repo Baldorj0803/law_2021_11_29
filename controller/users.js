@@ -3,7 +3,6 @@ const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { Op } = require("sequelize");
-const { query } = require("express");
 
 
 exports.getUsers = asyncHandler(async (req, res, next) => {

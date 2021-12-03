@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getorganization = asyncHandler(async (req, res, next) => {
+exports.getitem = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;
@@ -20,7 +20,7 @@ exports.getorganization = asyncHandler(async (req, res, next) => {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.organizations, query);
+  const pagination = await paginate(page, limit, req.db.items, query);
 
   let query = { offset: pagination.start - 1, limit };
 
@@ -38,35 +38,35 @@ exports.getorganization = asyncHandler(async (req, res, next) => {
       ]);
   }
   
-  const organizations = await req.db.organizations.findAll(query);
+  const items = await req.db.items.findAll(query);
 
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organizations,
+    data: items,
     pagination,
   });
 });
 
 
 
-exports.createorganization = asyncHandler(async (req, res, next) => {
+exports.createitem = asyncHandler(async (req, res, next) => {
 
-  const neworganization = await req.db.organizations.create(req.body);
+  const newitem = await req.db.items.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: neworganization,
+    data: newitem,
   });
 });
 
 
-exports.updateorganization = asyncHandler(async (req, res, next) => {
-  let user = await req.db.organizations.findByPk(req.params.id);
+exports.updateitem = asyncHandler(async (req, res, next) => {
+  let user = await req.db.items.findByPk(req.params.id);
 
   if (!user) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+    throw new MyError(`${req.params.id} id тэй item олдсонгүй.`, 400);
   }
 
   user = await user.update(req.body);
@@ -79,18 +79,18 @@ exports.updateorganization = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.deleteorganization = asyncHandler(async (req, res, next) => {
-  let organization = await req.db.organizations.findByPk(req.params.id);
+exports.deleteitem = asyncHandler(async (req, res, next) => {
+  let item = await req.db.items.findByPk(req.params.id);
 
-  if (!organization) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+  if (!item) {
+    throw new MyError(`${req.params.id} id тэй item олдсонгүй.`, 400);
   }
 
-  await organization.destroy();
+  await item.destroy();
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organization,
+    data: item,
   });
 });

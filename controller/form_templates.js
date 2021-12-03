@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getorganization = asyncHandler(async (req, res, next) => {
+exports.getform_template = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;
@@ -20,7 +20,7 @@ exports.getorganization = asyncHandler(async (req, res, next) => {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.organizations, query);
+  const pagination = await paginate(page, limit, req.db.form_templates, query);
 
   let query = { offset: pagination.start - 1, limit };
 
@@ -38,35 +38,35 @@ exports.getorganization = asyncHandler(async (req, res, next) => {
       ]);
   }
   
-  const organizations = await req.db.organizations.findAll(query);
+  const form_templates = await req.db.form_templates.findAll(query);
 
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organizations,
+    data: form_templates,
     pagination,
   });
 });
 
 
 
-exports.createorganization = asyncHandler(async (req, res, next) => {
+exports.createform_template = asyncHandler(async (req, res, next) => {
 
-  const neworganization = await req.db.organizations.create(req.body);
+  const newform_template = await req.db.form_templates.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: neworganization,
+    data: newform_template,
   });
 });
 
 
-exports.updateorganization = asyncHandler(async (req, res, next) => {
-  let user = await req.db.organizations.findByPk(req.params.id);
+exports.updateform_template = asyncHandler(async (req, res, next) => {
+  let user = await req.db.form_templates.findByPk(req.params.id);
 
   if (!user) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+    throw new MyError(`${req.params.id} id тэй form_template олдсонгүй.`, 400);
   }
 
   user = await user.update(req.body);
@@ -79,18 +79,18 @@ exports.updateorganization = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.deleteorganization = asyncHandler(async (req, res, next) => {
-  let organization = await req.db.organizations.findByPk(req.params.id);
+exports.deleteform_template = asyncHandler(async (req, res, next) => {
+  let form_template = await req.db.form_templates.findByPk(req.params.id);
 
-  if (!organization) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+  if (!form_template) {
+    throw new MyError(`${req.params.id} id тэй form_template олдсонгүй.`, 400);
   }
 
-  await organization.destroy();
+  await form_template.destroy();
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organization,
+    data: form_template,
   });
 });

@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getworkflow_template = asyncHandler(async (req, res, next) => {
+exports.getworkflow_templates = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;

@@ -8,10 +8,24 @@ const morgan = require("morgan");
 const logger = require("./middleware/logger");
 const cors = require('cors')
 // Router оруулж ирэх
-const usersRoutes = require("./routes/users");
+const organizationLevelsRoutes = require("./routes/organization_levels");
 const rolesRoutes = require("./routes/roles");
-const orgRoutes = require("./routes/organizations");
-const permissionRoutes = require("./routes/permissions");
+const permissionsRoutes = require("./routes/permissions");
+const rangesRoutes = require("./routes/ranges");
+const responseRoutes = require("./routes/response");
+const statusRoutes = require("./routes/status");
+const formTemplatesRoutes = require("./routes/form_templates");
+const itemTypesRoutes = require("./routes/item_types");
+const companyRoutes = require("./routes/company");
+const reqStatusRoutes = require("./routes/req_status");
+const organizationsRoutes = require("./routes/organizations");
+const roleHasPemissionsRoutes = require("./routes/roleHasPermissions");
+const workflowsRoutes = require("./routes/workflows");
+const usersRoutes = require("./routes/users");
+const workflowTemplatesRoutes = require("./routes/workflow_templates");
+const itemsRoutes = require("./routes/items");
+const requestRoutes = require("./routes/request");
+
 const injectDb = require("./middleware/injectDb");
 
 // Аппын тохиргоог process.env рүү ачаалах
@@ -47,10 +61,24 @@ app.use(cors());
 app.use(logger);
 app.use(injectDb(db));
 app.use(morgan("combined", { stream: accessLogStream }));
-app.use("/api/v1/users", usersRoutes);
+app.use("/api/v1/organizationLevel", organizationLevelsRoutes);
 app.use("/api/v1/roles", rolesRoutes);
-app.use("/api/v1/organizations", orgRoutes);
-app.use("/api/v1/permissions", permissionRoutes);
+app.use("/api/v1/permissions", permissionsRoutes);
+app.use("/api/v1/ranges",rangesRoutes );
+app.use("/api/v1/response",responseRoutes );
+app.use("/api/v1/status",statusRoutes );
+app.use("/api/v1/formTemplates",formTemplatesRoutes );
+app.use("/api/v1/itemTypes", itemTypesRoutes);
+app.use("/api/v1/company",companyRoutes );
+app.use("/api/v1/reqStatus",reqStatusRoutes );
+app.use("/api/v1/organizations", organizationsRoutes);
+app.use("/api/v1/roleHasPemissions", roleHasPemissionsRoutes);
+app.use("/api/v1/workflows", workflowsRoutes);
+app.use("/api/v1/users",usersRoutes );
+app.use("/api/v1/workflowTemplates",workflowTemplatesRoutes );
+app.use("/api/v1/items",itemsRoutes );
+app.use("/api/v1/request",requestRoutes );
+
 app.use(errorHandler);
 
 // db.user.belongsToMany(db.book, { through: db.comment });

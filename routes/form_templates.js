@@ -6,7 +6,7 @@ const {
   createform_template,
   updateform_template,
   deleteform_template
-} = require("../controller/formTemplates");
+} = require("../controller/form_templates");
 
 const router = express.Router();
 

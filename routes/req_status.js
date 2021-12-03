@@ -6,7 +6,7 @@ const {
   createreq_status,
   updatereq_status,
   deletereq_status
-} = require("../controller/reqStatus");
+} = require("../controller/req_status");
 
 const router = express.Router();
 

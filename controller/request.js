@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getrequest = asyncHandler(async (req, res, next) => {
+exports.getrequests = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;

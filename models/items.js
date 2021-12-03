@@ -48,6 +48,13 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
+        status: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            references: {
+                model: "status",
+                key: "id",  
+            },
+        },
     },
         {
             tableName: "items",

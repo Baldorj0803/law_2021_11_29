@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getorganizations = asyncHandler(async (req, res, next) => {
+exports.getcurrencies = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;
@@ -16,14 +16,13 @@ exports.getorganizations = asyncHandler(async (req, res, next) => {
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
-  let query ={}
   if (req.query) {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.organizations, query);
+  const pagination = await paginate(page, limit, req.db.currencies, query);
 
-  query = { offset: pagination.start - 1, limit };
+  let query = { offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -39,35 +38,35 @@ exports.getorganizations = asyncHandler(async (req, res, next) => {
       ]);
   }
   
-  const organizations = await req.db.organizations.findAll(query);
+  const currencies = await req.db.currencies.findAll(query);
 
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organizations,
+    data: currencies,
     pagination,
   });
 });
 
 
 
-exports.createorganization = asyncHandler(async (req, res, next) => {
+exports.createcurrencies = asyncHandler(async (req, res, next) => {
 
-  const neworganization = await req.db.organizations.create(req.body);
+  const newcurrencies = await req.db.currencies.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: neworganization,
+    data: newcurrencies,
   });
 });
 
 
-exports.updateorganization = asyncHandler(async (req, res, next) => {
-  let user = await req.db.organizations.findByPk(req.params.id);
+exports.updatecurrencies = asyncHandler(async (req, res, next) => {
+  let user = await req.db.currencies.findByPk(req.params.id);
 
   if (!user) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+    throw new MyError(`${req.params.id} id тэй currencies олдсонгүй.`, 400);
   }
 
   user = await user.update(req.body);
@@ -80,18 +79,18 @@ exports.updateorganization = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.deleteorganization = asyncHandler(async (req, res, next) => {
-  let organization = await req.db.organizations.findByPk(req.params.id);
+exports.deletecurrencies = asyncHandler(async (req, res, next) => {
+  let currencies = await req.db.currencies.findByPk(req.params.id);
 
-  if (!organization) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+  if (!currencies) {
+    throw new MyError(`${req.params.id} id тэй currencies олдсонгүй.`, 400);
   }
 
-  await organization.destroy();
+  await currencies.destroy();
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: organization,
+    data: currencies,
   });
 });

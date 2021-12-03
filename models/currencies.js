@@ -1,32 +1,33 @@
 
 module.exports = function (sequelize, DataTypes) {
-    let currencies = sequelize.define('ranges', {
+    let request = sequelize.define('currencies', {
         id: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
         },
-        min: {
-            type: DataTypes.DOUBLE,
-            allowNull:true,
-            defaultValue:0
+        name: {
+            type: DataTypes.STRING(255)
         },
-        max: {
-            type: DataTypes.DOUBLE,
-            allowNull: true,
+
+        code: {
+            type: DataTypes.STRING(5)
         },
-        currenciesId: {
+        status: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             references: {
-                model: "currencies",
+                model: "status",
                 key: "id",
             },
         },
+        rate: {
+            type: DataTypes.FLOAT
+        },
     },
         {
-            tableName: "ranges",
+            tableName: "currencies",
             timestamps: true,
         });
-    return currencies;
+    return request;
 };

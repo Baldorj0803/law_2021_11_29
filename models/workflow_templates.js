@@ -43,14 +43,6 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.INTEGER(10).UNSIGNED,
             defaultValue: 0,
         },
-        status: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            allowNull: false,
-            references: {
-                model: "status",
-                key: "id",
-              },
-        }
     },
         {
             tableName: "workflow_templates",

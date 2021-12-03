@@ -50,8 +50,8 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
-        toStep: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
+        prevStep: {
+            type: DataTypes.BIGINT,
         },
         suggestion: {
             type: DataTypes.TEXT,

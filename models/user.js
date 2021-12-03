@@ -15,10 +15,8 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.STRING(255)
     },
     mobile: {
-      type: DataTypes.STRING(255)
-    },
-    mobile2: {
-      type: DataTypes.STRING(255)
+      type: DataTypes.STRING(255),
+      allowNull:false
     },
     phone: {
       type: DataTypes.STRING(255)
@@ -32,25 +30,22 @@ module.exports = function (sequelize, DataTypes) {
     org_id: {
       type: DataTypes.INTEGER,
     },
-    is_active: {
-      type: DataTypes.INTEGER,
+    roleId: {
+      type: DataTypes.INTEGER(10).UNSIGNED,
+      allowNull: false,
+      defaultValue:1,
+      references: {
+        model: "status",
+        key: "id",
+      },
     },
     email: {
       type: DataTypes.STRING(255)
-    },
-    email_verified_at: {
-      type: DataTypes.DATE,
     },
     password: {
       type: DataTypes.STRING(255)
     },
     last_login_ip: {
-      type: DataTypes.STRING(255)
-    },
-    last_login_date: {
-      type: DataTypes.DATE,
-    },
-    remember_token: {
       type: DataTypes.STRING(255)
     },
     roleId: {

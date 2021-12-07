@@ -13,8 +13,21 @@ module.exports = function (sequelize, DataTypes) {
         },
         fileName: {
             type: DataTypes.STRING,
-            allowNull:false
+            allowNull:false,
+            unique: true
         },
+        createdBy:{
+            type: DataTypes.BIGINT,
+            references: {
+                model: "users",
+                key: "id",
+            },
+        },
+        totalDownload:{
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            defaultValue:0,
+            allowNull: false,
+        }
     },
         {
             tableName: "form_templates",

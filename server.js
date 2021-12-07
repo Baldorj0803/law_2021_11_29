@@ -7,6 +7,7 @@ const errorHandler = require("./middleware/error");
 const morgan = require("morgan");
 const logger = require("./middleware/logger");
 const cors = require('cors')
+const fileupload = require("express-fileupload");
 // Router оруулж ирэх
 const organizationLevelsRoutes = require("./routes/organization_levels");
 const rolesRoutes = require("./routes/roles");
@@ -57,7 +58,11 @@ var corsOptions = {
 
 // Body parser
 app.use(express.json());
+app.use(fileupload({
+  createParentPath:true
+}));
 app.use(cors());
+app.use("/static", express.static(path.join(__dirname, "public")));
 // app.use(cors(corsOptions));
 app.use(logger);
 app.use(injectDb(db));

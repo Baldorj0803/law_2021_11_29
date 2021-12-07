@@ -101,18 +101,13 @@ db.role_has_permissions.belongsTo(db.permissions);
 db.roles.hasMany(db.role_has_permissions);
 db.role_has_permissions.belongsTo(db.roles)
 
-// db.users.belongsTo(db.roles)
 db.roles.hasMany(db.users)
 db.users.belongsTo(db.roles);
 
-// db.user.hasMany(db.comment);
-// db.comment.belongsTo(db.user);
+db.users.hasMany(db.form_templates)
+db.form_templates.belongsTo(db.users);
 
-// db.book.hasMany(db.comment);
-// db.comment.belongsTo(db.book);
 
-// db.category.hasMany(db.book);
-// db.book.belongsTo(db.category);
 
 db.sequelize
   .sync()

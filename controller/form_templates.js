@@ -5,8 +5,12 @@ const MyError = require("../utils/myError");
 const paginate = require("../utils/paginate");
 
 exports.getform_templates = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
+  let page,limit,pagination="";
+  if(req.query.limit){
+     page = parseInt(req.query.page) || 1;
+     limit = parseInt(req.query.limit) || 100;
+  }
+ 
   const sort = req.query.sort;
   let select = req.query.select;
 
@@ -22,9 +26,13 @@ exports.getform_templates = asyncHandler(async (req, res, next) => {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.form_templates, query);
+  if(req.query.limit){
 
-  query = { offset: pagination.start - 1, limit };
+    pagination = await paginate(page, limit, req.db.form_templates, query);
+    query = { offset: pagination.start - 1, limit };
+  }
+
+
 
   if (select) {
     query.attributes = select;
@@ -39,13 +47,16 @@ exports.getform_templates = asyncHandler(async (req, res, next) => {
       ]);
   }
 
-  const form_templates = await req.db.form_templates.findAll(query);
+  
+  const form_templates = await req.db.form_templates.findAll({
+    include: [{ model: req.db.users}]
+  });
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
     data: form_templates,
-    pagination,
+    ...(pagination !== "" && { pagination }),
   });
 });
 

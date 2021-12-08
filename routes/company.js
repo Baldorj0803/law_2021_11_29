@@ -11,10 +11,10 @@ const {
 const router = express.Router();
 
 router.use(protect);
-router.route('/').get(authorize,getcompany);
-router.route('/create').post(authorize,createcompany);
-router.route("/update/:id").post(authorize,updatecompany);
-router.route("/delete/:id").post(authorize,deletecompany);
+router.route('/').get(getcompany);
+router.route('/create').post(createcompany);
+router.route("/update/:id").post(updatecompany);
+router.route("/delete/:id").post(deletecompany);
 
 
 module.exports = router;

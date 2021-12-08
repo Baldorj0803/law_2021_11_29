@@ -28,10 +28,15 @@ module.exports = function (sequelize, DataTypes) {
     profession: {
       type: DataTypes.STRING(255)
     },
-    org_id: {
-      type: DataTypes.INTEGER,
+    organizationId: {
+      type: DataTypes.BIGINT(20).UNSIGNED,
+      allowNull: false,
+      references: {
+        model: "organizations",
+        key: "id",
+      },
     },
-    roleId: {
+    status: {
       type: DataTypes.INTEGER(10).UNSIGNED,
       allowNull: false,
       defaultValue:1,

@@ -10,7 +10,7 @@ const {
 
 const router = express.Router();
 
-router.use(protect);
+// router.use(protect);
 // router.route('/').get(authorize,getorganizations);
 // router.route('/create').post(authorize,createorganization);
 // router.route("/update/:id").post(authorize,updateorganization);

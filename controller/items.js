@@ -45,8 +45,25 @@ exports.getitems = asyncHandler(async (req, res, next) => {
     pagination,
   });
 });
+exports.getItem = asyncHandler(async (req, res, next) => {
+
+  let item = await req.db.items.findByPk(req.params.id);
+
+  if (!item) {
+    throw new MyError(`${req.params.id} id тэй item олдсонгүй.`, 400);
+  }
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    data: item,
+  });
+});
 
 exports.createitem = asyncHandler(async (req, res, next) => {
+  if(!req.files){
+    throw new MyError("Гэрээгээ оруулна уу", 400);
+  }
   const file = req.files.file;
 
   if (
@@ -74,18 +91,28 @@ exports.createitem = asyncHandler(async (req, res, next) => {
   }
 
 
-  
-  file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
+  req.body.userId = 1;
+  // req.body.userId = req.userId;
+  req.body.typeId=1;
+  req.body.workflowId=1;
+  req.body.file = `file_${Date.now()}${path.parse(file.name).ext}`;
+  file.name = req.body.file;
 
+  //Тухайн өдрөөр фолдер үүсгэж хадгалах
   let time=new Date();
   time.setHours(time.getHours()+8)
   let folderName = `${time.getFullYear()}-${time.getMonth()}-${time.getDay()}`
+
   file.mv(`./public/${folderName}/${file.name}`, (err) => {
   	if (err) {
   		throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
   	}
   });
 
+  
+  req.body.rangeId = parseInt(req.body.rangeId);
+  req.body.company = parseInt(req.body.company);
+console.log(req.body)
   const newitem = await req.db.items.create(req.body);
   res.status(200).json({
     code: res.statusCode,

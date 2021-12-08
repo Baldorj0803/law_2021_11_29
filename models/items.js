@@ -1,64 +1,107 @@
-
 module.exports = function (sequelize, DataTypes) {
-    let request = sequelize.define('items', {
-        id: {
-            type: DataTypes.BIGINT,
-            allowNull: false,
-            primaryKey: true,
-            autoIncrement: true,
+  let request = sequelize.define(
+    "items",
+    {
+      id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      itemTypeId: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references: {
+          model: "item_types",
+          key: "id",
         },
-        name: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
+        defaultValue: 1,
+      },
+      rangeId: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references:{
+            model:'ranges',
+            key:"id"
+        }
+      },
+      file: {
+        type: DataTypes.STRING,
+      },
+      company: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references: {
+          model: "company",
+          key: "id",
         },
-        typeId: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            references: {
-                model: "item_types",
-                key: "id",
-            },
+      },
+      description: {
+        type: DataTypes.TEXT,
+      },
+      workflowId: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references: {
+          model: "workflows",
+          key: "id",
         },
-        price: {
-            type: DataTypes.INTEGER,
+      },
+      userId: {
+        type: DataTypes.BIGINT,
+        references: {
+          model: "users",
+          key: "id",
         },
-        file: {
-            type: DataTypes.STRING,
+      },
+      status: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references: {
+          model: "status",
+          key: "id",
         },
-        company: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            references: {
-                model: "company",
-                key: "id",
-            },
-        },
-        description: {
-            type: DataTypes.TEXT,
-        },
-        workflowId: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            references: {
-                model: "workflows",
-                key: "id",
-            },
-        },
-        createdBy: {
-            type: DataTypes.BIGINT,
-            references: {
-                model: "users",
-                key: "id",
-            },
-        },
-        status: {
-            type: DataTypes.INTEGER(10).UNSIGNED,
-            references: {
-                model: "status",
-                key: "id",  
-            },
-        },
+        defaultValue: 1,
+      },
+      //харилцагчийн мэдээлэл
+      custInfo: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      //товч утга
+      brfMean: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      //ажлын хөлс
+      wage: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+      },
+      //Гүйцэтгэх хугацаа
+      execTime: {
+        type: DataTypes.STRING(255),
+      },
+      //Баталгаат хугацаатай эсэх
+      warrantyPeriod: {
+        type: DataTypes.ENUM,
+        values: ["0", "1"],
+        defaultValue: "0",
+      },
+      //Торгууль гэрээ цуцлах нөхцөл
+      trmCont: {
+        type: DataTypes.ENUM,
+        values: ["0", "1"],
+        defaultValue: "0",
+      },
     },
-        {
-            tableName: "items",
-            timestamps: true,
-        });
-    return request;
+    {
+      tableName: "items",
+      timestamps: true,
+    }
+  );
+  return request;
 };

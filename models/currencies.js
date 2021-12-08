@@ -1,6 +1,6 @@
 
 module.exports = function (sequelize, DataTypes) {
-    let request = sequelize.define('currencies', {
+    let currencies = sequelize.define('currencies', {
         id: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             allowNull: false,
@@ -29,5 +29,5 @@ module.exports = function (sequelize, DataTypes) {
             tableName: "currencies",
             timestamps: true,
         });
-    return request;
+    return currencies;
 };

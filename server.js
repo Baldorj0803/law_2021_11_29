@@ -104,8 +104,15 @@ db.role_has_permissions.belongsTo(db.roles)
 db.roles.hasMany(db.users)
 db.users.belongsTo(db.roles);
 
+db.organizations.hasMany(db.users)
+db.users.belongsTo(db.organizations);
+
 db.users.hasMany(db.form_templates)
 db.form_templates.belongsTo(db.users);
+
+
+db.currencies.hasMany(db.ranges)
+db.ranges.belongsTo(db.currencies);
 
 
 

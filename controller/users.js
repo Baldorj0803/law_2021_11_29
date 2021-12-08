@@ -87,7 +87,7 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //Имэйл  хайх
-  let user = await req.db.users.findOne({ where: { email: req.body.email } })
+  let user = await req.db.users.findOne({ where: { email: req.body.email } , include    : [{ model: req.db.roles},{model:req.db.organizations}]})
 
   if (!user) {
     throw new Error("Имэйл болон нууц үг буруу байна", 401);

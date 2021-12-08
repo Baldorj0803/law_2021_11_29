@@ -1,6 +1,6 @@
 
 module.exports = function (sequelize, DataTypes) {
-    let currencies = sequelize.define('ranges', {
+    let ranges = sequelize.define('ranges', {
         id: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             allowNull: false,
@@ -16,7 +16,11 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.DOUBLE,
             allowNull: true,
         },
-        currenciesId: {
+        workflowId: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull: true,
+        },
+        currencyId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             references: {
                 model: "currencies",
@@ -28,5 +32,5 @@ module.exports = function (sequelize, DataTypes) {
             tableName: "ranges",
             timestamps: true,
         });
-    return currencies;
+    return ranges;
 };

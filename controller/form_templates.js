@@ -3,6 +3,7 @@ const slug = require("slug");
 const path = require("path");
 const MyError = require("../utils/myError");
 const paginate = require("../utils/paginate");
+const fs = require('fs')
 
 exports.getform_templates = asyncHandler(async (req, res, next) => {
   let page,limit,pagination="";
@@ -79,6 +80,9 @@ exports.getform_template = asyncHandler(async (req, res, next) => {
 });
 
 exports.createform_template = asyncHandler(async (req, res, next) => {
+  if(!req.files){
+    throw new MyError("Та word эсвэл pdf file upload хийнэ үү", 400);
+  }
   const file = req.files.file;
 
   if (
@@ -105,7 +109,7 @@ exports.createform_template = asyncHandler(async (req, res, next) => {
     }
   }
 
-  req.body.createdBy = req.userId;
+  req.body.userId = req.userId;
   req.body.fileName = `${slug(req.body.name)}-${Date.now()}${path.parse(file.name).ext}`;;
 
   file.mv(`./public/form-templates/${req.body.fileName}`, (err) => {
@@ -145,7 +149,14 @@ exports.deleteform_template = asyncHandler(async (req, res, next) => {
     throw new MyError(`${req.params.id} id тэй form_template олдсонгүй.`, 400);
   }
 
+  const path = './public/form-templates/'+form_template.fileName
+
   await form_template.destroy();
+
+  // !!! important file
+  fs.unlinkSync(path)
+
+
 
   res.status(200).json({
     code: res.statusCode,

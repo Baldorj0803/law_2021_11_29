@@ -1,97 +1,88 @@
-
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
-
 exports.getorganizations = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
-  const sort = req.query.sort;
-  let select = req.query.select;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 100;
+	const sort = req.query.sort;
+	let select = req.query.select;
 
-  if (select) {
-    select = select.split(" ");
-  }
+	if (select) {
+		select = select.split(" ");
+	}
 
-  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+	["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
-  let query ={}
-  if (req.query) {
-    query.where = req.query;
-  }
+	let query = {};
+	if (req.query) {
+		query.where = req.query;
+	}
 
-  const pagination = await paginate(page, limit, req.db.organizations, query);
+	const pagination = await paginate(page, limit, req.db.organizations, query);
 
-  query = { offset: pagination.start - 1, limit };
+	query = { offset: pagination.start - 1, limit };
 
-  if (select) {
-    query.attributes = select;
-  }
+	if (select) {
+		query.attributes = select;
+	}
 
+	if (sort) {
+		query.order = sort
+			.split(" ")
+			.map((el) => [
+				el.charAt(0) === "-" ? el.substring(1) : el,
+				el.charAt(0) === "-" ? "DESC" : "ASC",
+			]);
+	}
 
-  if (sort) {
-    query.order = sort
-      .split(" ")
-      .map((el) => [
-        el.charAt(0) === "-" ? el.substring(1) : el,
-        el.charAt(0) === "-" ? "DESC" : "ASC",
-      ]);
-  }
-  
-  const organizations = await req.db.organizations.findAll(query);
+	const organizations = await req.db.organizations.findAll(query);
 
-
-  res.status(200).json({
-    code: res.statusCode,
-    message: "success",
-    data: organizations,
-    pagination,
-  });
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: organizations,
+		pagination,
+	});
 });
-
-
 
 exports.createorganization = asyncHandler(async (req, res, next) => {
-
-  const neworganization = await req.db.organizations.create(req.body);
-  res.status(200).json({
-    code: res.statusCode,
-    message: "success",
-    data: neworganization,
-  });
+	const neworganization = await req.db.organizations.create(req.body);
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: neworganization,
+	});
 });
-
 
 exports.updateorganization = asyncHandler(async (req, res, next) => {
-  let user = await req.db.organizations.findByPk(req.params.id);
+	let user = await req.db.organizations.findByPk(req.params.id);
 
-  if (!user) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
-  }
+	if (!user) {
+		throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+	}
 
-  user = await user.update(req.body);
+	user = await user.update(req.body);
 
-  res.status(200).json({
-    code: res.statusCode,
-    message: "success",
-    data: user,
-  });
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: user,
+	});
 });
 
-
 exports.deleteorganization = asyncHandler(async (req, res, next) => {
-  let organization = await req.db.organizations.findByPk(req.params.id);
+	let organization = await req.db.organizations.findByPk(req.params.id);
 
-  if (!organization) {
-    throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
-  }
+	if (!organization) {
+		throw new MyError(`${req.params.id} id тэй organization олдсонгүй.`, 400);
+	}
 
-  await organization.destroy();
+	await organization.destroy();
 
-  res.status(200).json({
-    code: res.statusCode,
-    message: "success",
-    data: organization,
-  });
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: organization,
+	});
 });

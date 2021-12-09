@@ -1,7 +1,7 @@
 {
-  "name": "amazone_api",
+  "name": "law_management_api",
   "version": "1.0.0",
-  "description": "Amazone bookstore rest api",
+  "description": "law",
   "main": "server.js",
   "scripts": {
     "start": "NODE_ENV=production node server",

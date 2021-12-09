@@ -5,9 +5,16 @@ const paginate = require("../utils/paginate");
 
 
 exports.getranges = asyncHandler(async (req, res, next) => {
-  
-  const ranges = await req.db.ranges.findAll({include  : [{ model: req.db.currencies}]});
 
+  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+
+  let query ={}
+  if (req.query) {
+    query.where=req.query
+  }
+  query.include=[{ model: req.db.currencies}];
+
+  const ranges = await req.db.ranges.findAll(query);
 
   res.status(200).json({
     code: res.statusCode,

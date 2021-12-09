@@ -22,7 +22,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
     let key = Object.keys(req.query)
     let value = Object.values(req.query)
     query.where = {}
-    key.map((k, i) => {
+    key.map((k,  i) => {
       query.where[k]={}
       query.where[k][Op.like] = `%${value[i]}%`
     })

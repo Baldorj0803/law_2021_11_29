@@ -21,14 +21,6 @@ module.exports = function (sequelize, DataTypes) {
         },
         defaultValue: 1,
       },
-      rangeId: {
-        type: DataTypes.INTEGER(10).UNSIGNED,
-        allowNull: false,
-        references:{
-            model:'ranges',
-            key:"id"
-        }
-      },
       file: {
         type: DataTypes.STRING,
       },
@@ -58,7 +50,7 @@ module.exports = function (sequelize, DataTypes) {
           key: "id",
         },
       },
-      status: {
+      type: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,
         references: {
@@ -96,6 +88,23 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.ENUM,
         values: ["0", "1"],
         defaultValue: "0",
+      },
+      recieveUser:{
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+          model: "users",
+          key: "id",
+        },
+      },
+      status: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        defaultValue: 1,
+        references: {
+          model: "req_status",
+          key: "id",
+        },
       },
     },
     {

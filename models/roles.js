@@ -14,10 +14,6 @@ module.exports = function (sequelize, DataTypes) {
     description: {
       type: DataTypes.STRING(255)
     },
-    guard_name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
   },
     {
       tableName: "roles",

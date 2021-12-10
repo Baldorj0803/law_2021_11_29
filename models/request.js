@@ -39,6 +39,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         reqStatusId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull:false,
             references: {
                 model: "req_status",
                 key: "id",
@@ -51,8 +52,8 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
-        prevStep: {
-            type: DataTypes.BIGINT,
+        step: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
         },
         suggestion: {
             type: DataTypes.TEXT,

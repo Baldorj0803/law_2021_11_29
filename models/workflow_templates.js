@@ -19,7 +19,7 @@ module.exports = function (sequelize, DataTypes) {
             collate: 'utf8_general_ci',
             defaultValue: null
         },
-        role_id: {
+        roleId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             defaultValue: 0,
             references: {
@@ -27,7 +27,14 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
-        workflow_id: {
+        organizationId: {
+            type: DataTypes.BIGINT(20).UNSIGNED,
+            references: {
+                model: "organizations",
+                key: "id",
+            },
+        },
+        workflowId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
             defaultValue: 0,
             references: {

@@ -22,7 +22,7 @@ exports.getitems = asyncHandler(async (req, res, next) => {
 
   const pagination = await paginate(page, limit, req.db.items, query);
 
-   query = { offset: pagination.start - 1, limit };
+   query = { ...query,offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -36,6 +36,8 @@ exports.getitems = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
+
+  query.include = [{ model: req.db.req_status }]
 
   const items = await req.db.items.findAll(query);
 
@@ -112,6 +114,21 @@ exports.createitem = asyncHandler(async (req, res, next) => {
   req.body.rangeId = parseInt(req.body.rangeId);
   req.body.company = parseInt(req.body.company);
   const newitem = await req.db.items.create(req.body);
+
+  //хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
+  let new_request ={};
+  if(!req.body.workflowId){
+    throw new MyError(`Дамжлагын дугаар дамжуулаагүй байна`, 400);
+  }
+  new_request.workflowId=req.body.workflowId;
+  new_request.itemId=newitem.id;
+  new_request.reqStatusId=2;
+  new_request.prevStep=0;
+
+  
+
+
+
 
   res.status(200).json({
     code: res.statusCode,

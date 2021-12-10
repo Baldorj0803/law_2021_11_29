@@ -16,13 +16,14 @@ exports.getreq_status = asyncHandler(async (req, res, next) => {
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
+  let query={}
   if (req.query) {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.req_status, query);
+  // const pagination = await paginate(page, limit, req.db.req_status, query);
 
-  let query = { offset: pagination.start - 1, limit };
+  //  query = { offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -37,6 +38,8 @@ exports.getreq_status = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
+
+  console.log(query)
   
   const req_status = await req.db.req_status.findAll(query);
 
@@ -45,7 +48,7 @@ exports.getreq_status = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: req_status,
-    pagination,
+    // pagination,
   });
 });
 

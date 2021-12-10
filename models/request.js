@@ -17,6 +17,7 @@ module.exports = function (sequelize, DataTypes) {
 
         workflowTemplateId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull:false,
             references: {
                 model: "workflow_templates",
                 key: "id",

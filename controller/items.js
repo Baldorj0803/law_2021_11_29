@@ -1,9 +1,10 @@
-const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
-const paginate = require("../utils/paginate");
 const path = require("path");
 const sequelize = require("sequelize");
-
+const paginate = require("../utils/paginate");
+const MyError = require("../utils/myError");
+const {recieveUser,getWorkflowTemplate} = require("../utils/recieveUser");
+const variable =require('../config/const')
 exports.getitems = asyncHandler(async (req, res, next) => {
 	const page = parseInt(req.query.page) || 1;
 	const limit = parseInt(req.query.limit) || 100;
@@ -117,82 +118,14 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	message = "Файл амжилттай хадгалагдлаа. ";
 
 	// //хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
+	console.log("createReq")
 	let new_request = {};
-	if (!req.body.workflowId) {
-		throw new MyError(message + `Дамжлагын дугаар дамжуулаагүй байна`, 400);
-	}
-
-	new_request.itemId = newitem.id;
-	//Хүлээгдэж төлөвтэй үүсгэх
-	new_request.reqStatusId = 2;
-	//Эхний алхам байх бөгөөд аль дамжлагын үйлдэл дээр явж байгааг олох
-
-	//өөрөөс нь багат lvl тэй алхам байвал алгасна
-	let step = 2;
-	let workflow_template = await req.db.workflow_templates.findOne({
-		where: {
-			workflowId: newitem.workflowId,
-			step,
-		},
-	});
-
-	// дараагийн үйлдэл нь миний роль оос бага албан тушаалтай хүн хийх бол алгасна
-	if (
-		workflow_template.roleId >= req.roleId &&
-		(workflow_template.organizationId === null ||
-			workflow_template.organizationId !== req.orgId)
-	) {
-		for (let index = req.roleId; index > workflow_template.roleId; ) {
-			if (workflow_template.is_last === 1) {
-				//err бүх үйлдлийг алгаслаа
-				console.log("Бүх үйлдлийг алгаслаа");
-				break;
-			}
-			step++;
-			workflow_template = await req.db.workflow_templates.findOne({
-				where: {
-					workflowId: newitem.workflowId,
-					step,
-				},
-			});
-		}
-	}
-
-	if (!workflow_template) {
-		throw new MyError(
-			message + `Workflow template ээс эхний алхамд торирох үйлдэл олдсонгүй`,
-			400
-		);
-	}
-	new_request.workflowTemplateId = workflow_template.id;
-
-	if (!workflow_template.organizationId) {
-		console.log(workflow_template.roleId + " роль хүртэл давтах");
-		console.log(req.roleId + " миний роль");
-		let parentId,
-			levelId = req.roleId;
-		for (let index = req.roleId; index < array.length; index++) {
-			if (workflow_template.roleId === levelId) {
-				break;
-			}
-		}
-	} else {
-		//Нэг org байна /Тэр газрын захирал/
-		let recieveUser = await req.db.users.findAll({
-			where: {
-				organizationId: workflow_template.organizationId,
-			},
-		});
-		if (recieveUser.length === 0) {
-			throw new MyError(
-				message + `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
-				400
-			);
-		}
-		new_request.recieveUser = recieveUser[0].id;
-	}
-
-	// new_request = await req.db.request.create(new_request);
+	let useTemplate = await getWorkflowTemplate(req, newitem,  1)
+	new_request.workflowTemplateId =useTemplate.id; 
+	new_request.itemId = newitem.id,
+	  new_request.reqStatusId = variable.PENDING;
+	if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate)
+	new_request = await req.db.request.create(new_request);
 
 	res.status(200).json({
 		code: res.statusCode,
@@ -201,8 +134,6 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 			newitem,
 			new_request,
 		},
-
-		// workflow,
 	});
 });
 

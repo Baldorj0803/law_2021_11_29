@@ -21,17 +21,21 @@ module.exports = function (sequelize, DataTypes) {
         },
         roleId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull:true,
             defaultValue: 0,
             references: {
                 model: "roles",
                 key: "id",
+                allowNull:true
             },
         },
         organizationId: {
             type: DataTypes.BIGINT(20).UNSIGNED,
+            allowNull:true,
             references: {
                 model: "organizations",
                 key: "id",
+                allowNull:true
             },
         },
         workflowId: {

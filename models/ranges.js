@@ -38,6 +38,14 @@ module.exports = function (sequelize, DataTypes) {
       },
     },
     {
+      indexes: [
+        {
+          unique: true,
+          fields: ['workflowId', 'currencyId', 'companyId']
+        }
+      ]
+    },
+    {
       tableName: "ranges",
       timestamps: true,
     }

@@ -5,45 +5,75 @@ const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
-  const sort = req.query.sort;
-  let select = req.query.select;
-
-  if (select) {
-    select = select.split(" ");
-  }
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
-  if (req.query) {
-    query.where = req.query;
+  if (!req.query.reqStatusId) {
+    throw new MyError(`Төлөв дамжуулна уу`, 400);
   }
 
-  const pagination = await paginate(page, limit, req.db.request, query);
-
-  let query = { offset: pagination.start - 1, limit };
-
-  if (select) {
-    query.attributes = select;
+  let reqStatusId = await req.db.req_status.findOne({
+    where: {
+      slug: req.query.reqStatusId.trim()
+    },
+    attributes: ['id']
+  })
+  console.log(reqStatusId);
+  if (!reqStatusId) {
+    throw new MyError(`Төлөв олдсонгүй`, 400);
   }
-
-  if (sort) {
-    query.order = sort
-      .split(" ")
-      .map((el) => [
-        el.charAt(0) === "-" ? el.substring(1) : el,
-        el.charAt(0) === "-" ? "DESC" : "ASC",
-      ]);
+  let mainQuery = `select r.id, r.createdAt,u.id as sendUser,u.name,u.lastname,u.profession,o.name as gazar,i.name as gereeName,c.name,rs.name,rs.slug ` +
+    `from request r ` +
+    `left join req_status rs on r.reqStatusId =rs.id ` +
+    `left join items i on r.itemId=i.id ` +
+    `left join company c on i.company=c.id ` +
+    `left join users u on i.userId=u.id ` +
+    `left join organizations o on u.organizationId=o.id ` +
+    `where r.reqStatusId= ` + reqStatusId.id;
+  let isAdmin = await req.db.roles.findOne({
+    where: {
+      name: 'admin'
+    }
+  })
+  if (!isAdmin) {
+    mainQuery = mainQuery + ` r.recieveUser=${req.userId}`
   }
+  const [uResult, uMeta] = await req.db.sequelize.query(mainQuery);
 
-  const request = await req.db.request.findAll(query);
+
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: request,
-    pagination,
+    data: uResult,
+  });
+});
+
+exports.getrequest = asyncHandler(async (req, res, next) => {
+
+  //Өөрт ирсэн хүсэлтийг харах боломжтой учир userId гаар шүүв
+  if (!req.params.requestId) {
+    throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
+  }
+  let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
+  u.name,u.mobile,u.profession,o.name as gazarNegj
+  from request r
+  left join items i on r.itemId = i.id
+  left join company c on i.company=c.id
+  left join users u on i.userId=u.id
+  left join organizations o on u.organizationId=o.id
+  where r.id=${req.params.requestId} and r.recieveUser=${req.userId}`
+
+  const [uResult, uMeta] = await req.db.sequelize.query(query);
+
+  if (uResult.length === 0) {
+    throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
+  }
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    data: uResult,
   });
 });
 
@@ -143,7 +173,7 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 });
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
-  let msg;
+  console.log(req.body)
   let request = await req.db.request.findOne({
     where: {
       id: req.params.id,
@@ -154,6 +184,12 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   if (!request) {
     throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
   }
+
+  req.body.reqStatusId = await req.db.req_status.findOne({
+    where :{
+      slug:req.body.reqStatusId
+    }
+  })
 
   req.body.modifiedBy = req.userId;
 
@@ -197,7 +233,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
           workflow_id: updated_request.workflowTemplateId,
         },
       });
-      new_request.workflowTemplateId = await getWorkflowTemplate(req,updated_item, wt.step + 1)
+      new_request.workflowTemplateId = await getWorkflowTemplate(req, updated_item, wt.step + 1)
       new_request.itemId = updated_item.id,
         new_request.reqStatusId = variable.PENDING;
       if (new_request.workflowTemplateId) new_request.recieveUser = recieveUser(req, new_request.workflowTemplateId)
@@ -226,5 +262,41 @@ exports.deleterequest = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: request,
+  });
+});
+
+
+
+exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
+
+  if (!req.params.requestId||!req.params.fileName) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let request = await req.db.request.findOne({
+    where: {
+      id: req.params.requestId,
+      recieveUser: req.userId
+    }
+  })
+  if (!request) {
+    throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+  }
+
+  let item = await req.db.items.findOne({
+    where: {
+      id: request.itemId,
+      file: req.params.fileName
+    }
+  })
+  if (!item) {
+    throw new MyError(`Файл олдсонгүй`, 400)
+  }
+
+  res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(404).end()
+    }
   });
 });

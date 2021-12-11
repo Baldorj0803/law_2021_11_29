@@ -89,14 +89,6 @@ module.exports = function (sequelize, DataTypes) {
         values: ["0", "1"],
         defaultValue: "0",
       },
-      recieveUser:{
-        type: DataTypes.BIGINT,
-        allowNull: true,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      },
       reqStatusId: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,

@@ -68,11 +68,11 @@ exports.getform_template = asyncHandler(async (req, res, next) => {
   
   if (!template) {
     throw new MyError("Файл олдсонгүй", 400);
-  }
-  let path = "D:/project/back/law/public/form-templates";
+  };
+  if(process.env)
   template.totalDownload+=1;
   await template.save()
-  res.download(path + `/${req.params.fileName}`, function (err) {
+  res.download(process.env.FILE_PATH + `/form-templates/${req.params.fileName}`, function (err) {
     if (err) {
       console.log(err);
     }

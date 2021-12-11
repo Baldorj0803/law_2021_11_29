@@ -99,12 +99,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	req.body.file = `file_${Date.now()}${path.parse(file.name).ext}`;
 	file.name = req.body.file;
 
-	//Тухайн өдрөөр фолдер үүсгэж хадгалах
-	let time = new Date();
-	time.setHours(time.getHours() + 8);
-	let folderName = `${time.getFullYear()}-${time.getMonth()}-${time.getDay()}`;
-
-	file.mv(`./public/${folderName}/${file.name}`, (err) => {
+	file.mv(`./public/files/${file.name}`, (err) => {
 		if (err) {
 			throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
 		}

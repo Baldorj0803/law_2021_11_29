@@ -17,22 +17,22 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
-  let query={}
+  let query = {}
   if (req.query) {
     let key = Object.keys(req.query)
     let value = Object.values(req.query)
     query.where = {}
-    key.map((k,  i) => {
-      query.where[k]={}
+    key.map((k, i) => {
+      query.where[k] = {}
       query.where[k][Op.like] = `%${value[i]}%`
     })
   }
 
-  const pagination = await paginate(page, limit, req.db.users,query);
+  const pagination = await paginate(page, limit, req.db.users, query);
 
-   query= {...query, offset: pagination.start - 1, limit };
+  query = { ...query, offset: pagination.start - 1, limit };
 
-  
+
 
   if (select) {
     query.attributes = select;
@@ -81,23 +81,24 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 //login
 exports.login = asyncHandler(async (req, res, next) => {
   //email password орж ирсэн эсэхийг шалгах
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new Error("Имэйл болон нууц үгээ дамжуулна уу", 400);
+  const { mobile, password } = req.body;
+  if (!mobile || !password) {
+    throw new Error("Утасны дугаар нууц үгээ дамжуулна уу", 400);
   }
 
   //Имэйл  хайх
-  let user = await req.db.users.findOne({ where: { email: req.body.email } , include    : [{ model: req.db.roles},{model:req.db.organizations}]})
+  let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
 
   if (!user) {
-    throw new Error("Имэйл болон нууц үг буруу байна", 401);
+    throw new Error("Утасны дугаар нууц үг буруу байна", 401);
   }
 
   //нууц үг шалгах
-  const ok = await user.checkPassword(password);
+  // const ok = await user.checkPassword(password);
+  const ok = (password === user.password) ? true : false;
 
   if (!ok) {
-    throw new Error("Имэйл болон нууц үг буруу байнаa", 401);
+    throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
   }
 
   /* !!! token авсны дараа role ийг null болгох  */

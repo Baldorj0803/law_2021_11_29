@@ -27,6 +27,7 @@ const workflowTemplatesRoutes = require("./routes/workflow_templates");
 const itemsRoutes = require("./routes/items");
 const requestRoutes = require("./routes/request");
 const currenciesRoutes = require("./routes/currencies");
+const dashboardRoutes = require("./routes/dashboard")
 
 const injectDb = require("./middleware/injectDb");
 
@@ -85,6 +86,7 @@ app.use("/api/v1/workflowTemplates",workflowTemplatesRoutes );
 app.use("/api/v1/items",itemsRoutes );
 app.use("/api/v1/request",requestRoutes );
 app.use("/api/v1/currencies",currenciesRoutes );
+app.use("/api/v1/dashboard",dashboardRoutes);
 
 app.use(errorHandler);
 

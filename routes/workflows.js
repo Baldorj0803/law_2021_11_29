@@ -10,8 +10,8 @@ const {
 
 const router = express.Router();
 
+router.route('/').get(getworkflows);
 router.use(protect);
-router.route('/').get(authorize,getworkflows);
 router.route('/create').post(authorize,createworkflow);
 router.route("/update/:id").post(authorize,updateworkflow);
 router.route("/delete/:id").post(authorize,deleteworkflow);

@@ -117,6 +117,9 @@ db.items.belongsTo(db.req_status)
 db.req_status.hasMany(db.request);
 db.request.belongsTo(db.req_status)
 
+db.currencies.hasMany(db.workflows);
+db.workflows.belongsTo(db.currencies)
+
 
 db.sequelize
   .sync()

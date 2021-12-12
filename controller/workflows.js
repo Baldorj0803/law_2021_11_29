@@ -5,7 +5,16 @@ const paginate = require("../utils/paginate");
 
 
 exports.getworkflows = asyncHandler(async (req, res, next) => {
-  const workflows = await req.db.workflows.findAll();
+
+  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+
+  let query = {}
+  if (req.query) {
+    query.where = req.query
+  }
+
+  query.include=[{ model: req.db.currencies}]
+  const workflows = await req.db.workflows.findAll(query);
 
   res.status(200).json({
     code: res.statusCode,

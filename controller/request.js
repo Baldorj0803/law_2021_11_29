@@ -21,17 +21,17 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
   if (!reqStatusId) {
     throw new MyError(`Төлөв олдсонгүй`, 400);
   }
-  let mainQuery = `select r.id,r.recieveUser, r.createdAt,u.id as sendUser,u.name as sendUserName,u.lastname,` +
-    `u.profession,o.name as gazar,i.name as gereeName,c.name as companyName,rs.name as statusName,rs.slug ,rg.min,rg.max,cur.code ` +
-    `from request r ` +
-    `left join req_status rs on r.reqStatusId =rs.id ` +
-    `left join items i on r.itemId=i.id ` +
-    `left join ranges rg on i.rangeId = rg.id ` +
-    `left join currencies cur on rg.currencyId=cur.id ` +
-    `left join company c on i.company=c.id ` +
-    `left join users u on i.userId=u.id ` +
-    `left join organizations o on u.organizationId=o.id ` +
-    `where r.reqStatusId= ` + reqStatusId.id;
+  let mainQuery = `select r.id,r.recieveUser, r.createdAt,u.id as sendUser,u.name as sendUserName,u.lastname,
+  u.profession,o.name as gazar,i.name as gereeName,c.name as companyName,rs.name as statusName,rs.slug ,w.min,w.max,cur.code 
+  from request r 
+  left join req_status rs on r.reqStatusId =rs.id 
+  left join items i on r.itemId=i.id 
+  left join workflows w on i.workflowId = w.id
+  left join currencies cur on w.currencyId=cur.id 
+  left join company c on i.company=c.id 
+  left join users u on i.userId=u.id 
+  left join organizations o on u.organizationId=o.id
+    where r.reqStatusId= ${reqStatusId.id}`
   let isAdmin = await req.db.roles.findOne({
     where: {
       name: 'admin'
@@ -58,11 +58,11 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
     throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
   }
   let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
-  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,rg.min,rg.max,cur.code as curName
+  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName
   from request r
   left join items i on r.itemId = i.id
-  left join ranges rg on i.rangeId = rg.id
-  left join currencies cur on rg.currencyId = cur.id
+  left join workflows w on i.workflowId=w.id
+  left join currencies cur on w.currencyId = cur.id
   left join company c on i.company=c.id
   left join users u on i.userId=u.id
   left join organizations o on u.organizationId=o.id
@@ -182,7 +182,7 @@ const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
   let updatedRequest = await request.update(body);
   // console.log(itemStatus)
   // item.reqStatusId = itemStatus;
-  let updatedItem = await item.update({reqStatusId:itemStatus});
+  let updatedItem = await item.update({ reqStatusId: itemStatus });
   // let updatedItem = await item.save();
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
@@ -219,7 +219,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   let status = await req.db.req_status.findByPk(req.body.reqStatusId);
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
   let item = await req.db.items.findByPk(request.itemId);
-  
+
 
   if (!item) {
     throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
@@ -262,14 +262,14 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         new_request.reqStatusId = variable.PENDING;
       console.log(`Дараагийн шатны роль:${new_request.workflowTemplateId.roleId} ,орг:${new_request.workflowTemplateId.organizationId}`.blue);
 
-      if (new_request.workflowTemplateId) new_request.recieveUser =await recieveUser(req, new_request.workflowTemplateId,item)
+      if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, new_request.workflowTemplateId, item)
 
-      new_request.workflowTemplateId=new_request.workflowTemplateId.id
+      new_request.workflowTemplateId = new_request.workflowTemplateId.id
       new_request = await req.db.request.create(new_request);
 
       // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
       // item.reqStatusId = variable.COMPLETED;
-      let updated_item = await item.update({reqStatusId:variable.COMPLETED});
+      let updated_item = await item.update({ reqStatusId: variable.COMPLETED });
       request = await request.update(req.body)
       data = { ...data, new_request }
       data = { ...data, updated_item }

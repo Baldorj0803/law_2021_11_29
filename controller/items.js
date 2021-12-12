@@ -107,7 +107,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 
 	req.body.userId = req.userId;
 	req.body.typeId = variable.DRAFT;
-	req.body.rangeId = parseInt(req.body.rangeId);
+	req.body.workflowId = parseInt(req.body.workflowId);
 	req.body.company = parseInt(req.body.company);
 	const newitem = await req.db.items.create(req.body);
 	msg = "Файл амжилттай хадгалагдлаа. ";
@@ -132,7 +132,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate,newitem)
 	new_request = await req.db.request.create(new_request);
 	msg=msg+"Хүсэлт дараагийн шатанд амжилттай илгээгдлээ"
-	newitem.typeId = variable.PENDING;
+	newitem.reqStatusId = variable.PENDING;
 	await newitem.save()
 
 	res.status(200).json({

@@ -34,19 +34,12 @@ exports.getRequestProcess = asyncHandler(async (req, res, next) => {
 
     let w = await req.db.workflows.findByPk(req.params.workflowId)
     if (!w) throw new MyError(`${req.params.workflowId} дугаартай дамжлага олдсонгүй`)
-    // let query = `select wt.workflowId, step,reqStatusId,count(*) as total,wt.name,rs.name,rs.slug,rs.id
-    // from request r
-    // left join workflow_templates wt on r.workflowTemplateId=wt.id
-    // left join req_status rs on r.reqStatusId=rs.id
-    // where wt.workflowId=${req.params.workflowId}
-    // group by wt.step,r.reqStatusId;`
 
     let query = `select wt.workflowId, step,reqStatusId,count(*) as total,wt.name
     from request r
     left join workflow_templates wt on r.workflowTemplateId=wt.id
     where wt.workflowId=${req.params.workflowId}
-    group by wt.step
-    `
+    group by wt.step`
 
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 

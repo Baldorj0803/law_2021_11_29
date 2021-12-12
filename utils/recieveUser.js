@@ -23,14 +23,14 @@ exports.test = asyncHandler(async (req, item, step) => {
             is_last: 1
         }
     })
-    if (!lastTemplate) throw new MyError(`${range.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
+    if (!lastTemplate) throw new MyError(`${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
     let workflow_template;
     //Хэрвээ сүүлийн алхам биш бол дараагийн алхамыг олно
     if (lastTemplate.step > step) {
         for (let index = step; index <= lastTemplate.step; index++) {
             let checkWorkflowTemplate = await req.db.workflow_templates.findOne({
                 where: {
-                    workflowId: range.workflowId,
+                    workflowId: item.workflowId,
                     step: index,
                 },
             });
@@ -90,14 +90,14 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
             is_last: 1
         }
     })
-    if (!lastTemplate) throw new MyError(`${range.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
+    if (!lastTemplate) throw new MyError(`${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
 
     if (lastTemplate.step > step) {
         for (let index = step; index <= lastTemplate.step; index++) {
             //Дараагийн алхамд шалгагдад workflow ийн template
             let checkWorkflowTemplate = await req.db.workflow_templates.findOne({
                 where: {
-                    workflowId: range.workflowId,
+                    workflowId: item.workflowId,
                     step: index,
                 },
             });

@@ -35,11 +35,11 @@ module.exports = function (sequelize, DataTypes) {
       description: {
         type: DataTypes.TEXT,
       },
-      workflowId: {
+      rangeId: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,
         references: {
-          model: "workflows",
+          model: "ranges",
           key: "id",
         },
       },
@@ -98,6 +98,7 @@ module.exports = function (sequelize, DataTypes) {
           key: "id",
         },
       },
+      
     },
     {
       tableName: "items",

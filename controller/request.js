@@ -18,14 +18,16 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
     },
     attributes: ['id']
   })
-  console.log(reqStatusId);
   if (!reqStatusId) {
     throw new MyError(`Төлөв олдсонгүй`, 400);
   }
-  let mainQuery = `select r.id, r.createdAt,u.id as sendUser,u.name,u.lastname,u.profession,o.name as gazar,i.name as gereeName,c.name,rs.name,rs.slug ` +
+  let mainQuery = `select r.id,r.recieveUser, r.createdAt,u.id as sendUser,u.name as sendUserName,u.lastname,` +
+    `u.profession,o.name as gazar,i.name as gereeName,c.name as companyName,rs.name as statusName,rs.slug ,rg.min,rg.max,cur.code ` +
     `from request r ` +
     `left join req_status rs on r.reqStatusId =rs.id ` +
     `left join items i on r.itemId=i.id ` +
+    `left join ranges rg on i.rangeId = rg.id ` +
+    `left join currencies cur on rg.currencyId=cur.id ` +
     `left join company c on i.company=c.id ` +
     `left join users u on i.userId=u.id ` +
     `left join organizations o on u.organizationId=o.id ` +
@@ -36,7 +38,7 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
     }
   })
   if (!isAdmin) {
-    mainQuery = mainQuery + ` r.recieveUser=${req.userId}`
+    mainQuery = mainQuery + ` and r.recieveUser=${req.userId}`
   }
   const [uResult, uMeta] = await req.db.sequelize.query(mainQuery);
 
@@ -172,12 +174,25 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
   });
 });
 
+
+const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
+  let data = {}
+  let updatedRequest = await request.update(body);
+  item.reqStatusId = itemStatus;
+  let updatedItem = await item.update(item);
+  data = { ...data, updatedRequest }
+  data = { ...data, updatedItem }
+  return data;
+})
+
 exports.updaterequest = asyncHandler(async (req, res, next) => {
-  console.log(req.body)
+  let msg = "", data = {}
+
   let request = await req.db.request.findOne({
     where: {
       id: req.params.id,
-      recieveUser: req.userId
+      recieveUser: req.userId,
+      modifiedBy: null
     }
   });
 
@@ -186,66 +201,80 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   }
 
   req.body.reqStatusId = await req.db.req_status.findOne({
-    where :{
-      slug:req.body.reqStatusId
-    }
+    where: {
+      slug: req.body.requestId
+    },
   })
-
+  req.body.reqStatusId = req.body.reqStatusId.id
   req.body.modifiedBy = req.userId;
 
-  let updated_request = await request.update(req.body);
 
 
   // ------------- Гэрээний төрлийг өөрчлөх -----------------
 
-  let status = await req.db.req_status.findByPk(updated_request.reqStatusId);
+  let status = await req.db.req_status.findByPk(req.body.reqStatusId);
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
-  let item = await req.db.items.findByPk(updated_request.itemId);
+  let item = await req.db.items.findByPk(request.itemId);
+  
 
   if (!item) {
     throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
   }
   if (status.slug === "CANCELED") {
-    item.reqStatusId = variable.CANCELED;
-    await item.update(item);
-    msg = "Гэрээ цуцлагдлаа";
+    data = await createNextReq(item, request, req.body, variable.CANCELED,)
+    msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
     //хэрэв зөвшөөрсөн хүсэлт ирвэл сүүлийн алхам эсэхийг шалгаад батлагдсан эсэхийг тодорхойлох
     let wt = await req.db.workflow_templates.findOne({
       where: {
-        workflow_id: updated_request.workflowTemplateId,
+        id: request.workflowTemplateId,
         is_last: 1,
       },
     });
+
     if (wt) {
       //Сүүлийн алхам батлагдасан
-      item.reqStatusId = variable.APPROVED;
-      await item.update(item);
+      data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
+      msg = "Гэрээ батлагдлаа"
     } {
-      //Сүүлийх биш байвал төлвийг өөрчлөөд шинэ хүсэлт үүсгэх
-      item.reqStatusId = variable.COMPLETED;
-      let updated_item = await item.update(item);
 
       // id, modifiedBy, workflowTemplateId, itemId, responseId, reqStatusId, recieveUser, suggestion, createdAt, updatedAt
       let new_request = {};
+      //Одоогийн тэмплэйтийг олох
       let wt = await req.db.workflow_templates.findOne({
         where: {
-          workflow_id: updated_request.workflowTemplateId,
+          id: request.workflowTemplateId,
         },
       });
-      new_request.workflowTemplateId = await getWorkflowTemplate(req, updated_item, wt.step + 1)
-      new_request.itemId = updated_item.id,
+      //Дараагийн хүсэлт илгээгдэх темплэйтийг олох
+      new_request.workflowTemplateId = await getWorkflowTemplate(req, item, wt.step + 1)
+      if (new_request.workflowTemplateId === 0) {
+        //Сүүлийн алхам гэж үзэх бөгөөд дээр шалгасан болохоор иишээ орно гэж бодохгүй байна
+        //Гэхдээ яахав кк
+        data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
+        msg = "Гэрээ батлагдлаа"
+      }
+      new_request.itemId = item.id,
         new_request.reqStatusId = variable.PENDING;
-      if (new_request.workflowTemplateId) new_request.recieveUser = recieveUser(req, new_request.workflowTemplateId)
+      console.log(`Дараагийн шатны роль:${new_request.workflowTemplateId.roleId} ,орг:${new_request.workflowTemplateId.organizationId}`.blue);
 
+      if (new_request.workflowTemplateId) new_request.recieveUser =await recieveUser(req, new_request.workflowTemplateId,item)
+
+      new_request.workflowTemplateId=new_request.workflowTemplateId.id
       new_request = await req.db.request.create(new_request);
+
+      // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
+      item.reqStatusId = variable.COMPLETED;
+      let updated_item = await item.update(item);
+      data = { ...data, new_request }
+      data = { ...data, updated_item }
     }
   }
 
   res.status(200).json({
     code: res.statusCode,
-    message: "success",
-    data: request,
+    message: `${msg}`,
+    data,
   });
 });
 
@@ -269,7 +298,7 @@ exports.deleterequest = asyncHandler(async (req, res, next) => {
 
 exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
 
-  if (!req.params.requestId||!req.params.fileName) {
+  if (!req.params.requestId || !req.params.fileName) {
     throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
   }
 

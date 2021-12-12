@@ -13,7 +13,8 @@ module.exports = function (sequelize, DataTypes) {
         },
         slug: {
             type: DataTypes.STRING,
-            allowNull:false
+            allowNull:false,
+            unique:true
         },
     },
         {

@@ -58,6 +58,15 @@ module.exports = function (sequelize, DataTypes) {
 			},
 		},
 		{
+			indexes: [
+			  //Нэг хүн дээр нэг гэрээний хүсэлт олон ирэхгүй
+			  {
+				unique: true,
+				fields: ['itemId', 'recieveUser']
+			  }
+			]
+		  },
+		{
 			tableName: "request",
 			timestamps: true,
 		}

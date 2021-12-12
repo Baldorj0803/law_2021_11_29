@@ -101,22 +101,22 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 },
             });
 
-            if (checkWorkflowTemplate.roleId < req.roleId) {
+            if (checkWorkflowTemplate.roleId < itemCreatedUser.roleId) {
                 //Дараагийн шат надаас өндөр рольтой байвал бол дамжих
                 workflow_template = checkWorkflowTemplate
                 break;
-            } else if (checkWorkflowTemplate > req.roleId) {
+            } else if (checkWorkflowTemplate > itemCreatedUser.roleId) {
                 //Дараагийн шат надаас бага рольтой бөгөөд орг байхгүй бол алгасах
                 //Дараагийн шат надаас бага рольтой бөгөөд орг байвал дамжих
                 if (checkWorkflowTemplate.organizationId !== null) {
                     workflow_template = checkWorkflowTemplate
                     break;
                 }
-            } else if (checkWorkflowTemplate === req.roleId) {
+            } else if (checkWorkflowTemplate === itemCreatedUser.roleId) {
                 //Дараагийн шат надтай ижил рольтой бөгөөд орг байхгүй бол алгасах
                 //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани роль биш байвал дамжих
                 //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал дамжих
-                if (req.roleId === 1) {
+                if (itemCreatedUser.roleId === 1) {
                     let myOrganization = await req.db.organizations.findByPk(req.orgId);
                     let templateOrg = await req.db.organizations.findByPk(checkWorkflowTemplate.organizationId);
                     if (myOrganization.parentId === templateOrg.id) {
@@ -185,12 +185,11 @@ exports.recieveUser = asyncHandler(async (req, workflow_template,item) => {
         userId = recieveUser[0].id;
     } else {
         console.log(workflow_template.roleId + " роль хүртэл давтах");
-        console.log(req.roleId + " миний роль");
-        let currentOrg = req.orgId;
-        for (let index = req.roleId+1; index >= workflow_template.roleId; index--) {
+        console.log(itemCreatedUser.roleId + " миний роль");
+        let currentOrg = itemCreatedUser.organizationId;
+        for (let index = itemCreatedUser.roleId+1; index >= workflow_template.roleId; index--) {
             let myOrganization = await req.db.organizations.findByPk(currentOrg);
             let parent = await req.db.organizations.findByPk(myOrganization.parent_id);
-
             if (parent.level_id === workflow_template.roleId) {
                 let recieveUser = await req.db.users.findAll({
                     where: {
@@ -213,6 +212,7 @@ exports.recieveUser = asyncHandler(async (req, workflow_template,item) => {
                 userId = recieveUser[0].id;
                 break;
             }
+            currentOrg=parent.id
         }
         if (!userId) {
             throw new MyError(

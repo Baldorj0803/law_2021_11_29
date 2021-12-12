@@ -58,9 +58,11 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
     throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
   }
   let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
-  u.name,u.mobile,u.profession,o.name as gazarNegj
+  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,rg.min,rg.max,cur.code as curName
   from request r
   left join items i on r.itemId = i.id
+  left join ranges rg on i.rangeId = rg.id
+  left join currencies cur on rg.currencyId = cur.id
   left join company c on i.company=c.id
   left join users u on i.userId=u.id
   left join organizations o on u.organizationId=o.id
@@ -178,8 +180,10 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
   let data = {}
   let updatedRequest = await request.update(body);
-  item.reqStatusId = itemStatus;
-  let updatedItem = await item.update(item);
+  // console.log(itemStatus)
+  // item.reqStatusId = itemStatus;
+  let updatedItem = await item.update({reqStatusId:itemStatus});
+  // let updatedItem = await item.save();
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
   return data;
@@ -264,10 +268,12 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       new_request = await req.db.request.create(new_request);
 
       // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
-      item.reqStatusId = variable.COMPLETED;
-      let updated_item = await item.update(item);
+      // item.reqStatusId = variable.COMPLETED;
+      let updated_item = await item.update({reqStatusId:variable.COMPLETED});
+      request = await request.update(req.body)
       data = { ...data, new_request }
       data = { ...data, updated_item }
+      data = { ...data, request }
     }
   }
 

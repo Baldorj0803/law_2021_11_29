@@ -14,11 +14,12 @@ exports.test = asyncHandler(async (req, item, step) => {
 
 
     //Тухайн итем аль workflow дээр явж байгааг олоод
-    let range = await req.db.ranges.findByPk(item.rangeId);
+    // let range = await req.db.ranges.findByPk(item.rangeId);
     //Тухайн workflow ийн сүүлийн 
     let lastTemplate = await req.db.workflow_templates.findOne({
         where: {
-            workflowId: range.workflowId,
+            // workflowId: range.workflowId,
+            workflowId:item.workflowId,
             is_last: 1
         }
     })
@@ -82,10 +83,10 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
     let workflow_template;
 
     //Тухайн итемд хамаарах workflow ийн сүүлийн алхамыг олох
-    let range = await req.db.ranges.findByPk(item.rangeId);
+    // let range = await req.db.ranges.findByPk(item.rangeId);
     let lastTemplate = await req.db.workflow_templates.findOne({
         where: {
-            workflowId: range.workflowId,
+            workflowId: item.workflowId,
             is_last: 1
         }
     })

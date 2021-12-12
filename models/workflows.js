@@ -19,7 +19,43 @@ module.exports = function (sequelize, DataTypes) {
             charset: 'utf8',
             collate: 'utf8_general_ci'
         },
+        min: {
+            type: DataTypes.DOUBLE,
+            allowNull: true,
+            defaultValue: 0,
+        },
+        max: {
+            type: DataTypes.DOUBLE,
+            allowNull: true,
+        },
+        workflowId: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull: true,
+        },
+        currencyId: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            references: {
+                model: "currencies",
+                key: "id",
+            },
+        },
+        companyId: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull: false,
+            references: {
+                model: "company",
+                key: "id",
+            },
+        },
     },
+        {
+            indexes: [
+                {
+                    unique: true,
+                    fields: ['min', 'max', 'currencyId', 'companyId']
+                }
+            ]
+        },
         {
             tableName: "workflows",
             timestamps: true,

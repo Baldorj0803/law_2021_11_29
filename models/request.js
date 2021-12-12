@@ -57,15 +57,15 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.TEXT,
 			},
 		},
-		// {
-		// 	indexes: [
-		// 	  //Нэг хүн дээр нэг гэрээний хүсэлт олон ирэхгүй
-		// 	  {
-		// 		unique: true,
-		// 		fields: ['itemId', 'recieveUser']
-		// 	  }
-		// 	]
-		//   },
+		{
+			indexes: [
+				//Нэг хүн дээр нэг гэрээний хүсэлт олон ирэхгүй
+				{
+					unique: true,
+					fields: ['itemId', 'recieveUser']
+				}
+			]
+		},
 		{
 			tableName: "request",
 			timestamps: true,

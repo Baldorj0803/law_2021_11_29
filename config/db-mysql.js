@@ -28,7 +28,6 @@ const models = [
   require("../models/organization_levels"),
   require("../models/roles"),
   require("../models/permissions"),
-  require("../models/ranges"),
   require("../models/responses"),
   require("../models/status"),
   require("../models/form_templates"),

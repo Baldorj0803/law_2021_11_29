@@ -12,7 +12,6 @@ const fileupload = require("express-fileupload");
 const organizationLevelsRoutes = require("./routes/organization_levels");
 const rolesRoutes = require("./routes/roles");
 const permissionsRoutes = require("./routes/permissions");
-const rangesRoutes = require("./routes/ranges");
 const responseRoutes = require("./routes/response");
 const statusRoutes = require("./routes/status");
 const formTemplatesRoutes = require("./routes/form_templates");
@@ -71,7 +70,6 @@ app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1/organizationLevel", organizationLevelsRoutes);
 app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/permissions", permissionsRoutes);
-app.use("/api/v1/ranges",rangesRoutes );
 app.use("/api/v1/response",responseRoutes );
 app.use("/api/v1/status",statusRoutes );
 app.use("/api/v1/formTemplates",formTemplatesRoutes );
@@ -111,10 +109,6 @@ db.users.belongsTo(db.organizations);
 
 db.users.hasMany(db.form_templates)
 db.form_templates.belongsTo(db.users);
-
-
-db.currencies.hasMany(db.ranges)
-db.ranges.belongsTo(db.currencies);
 
 db.req_status.hasMany(db.items);
 db.items.belongsTo(db.req_status)

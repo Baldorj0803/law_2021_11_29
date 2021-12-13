@@ -42,6 +42,8 @@ const models = [
   require("../models/items"),
   require("../models/request"),
   require("../models/currencies"),
+  require("../models/branch"),
+  require("../models/workflowType"),
 ];
 
 models.forEach((model) => {

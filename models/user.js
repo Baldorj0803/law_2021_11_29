@@ -65,6 +65,14 @@ module.exports = function (sequelize, DataTypes) {
 					key: "id",
 				},
 			},
+			branchId: {
+				type: DataTypes.INTEGER(10).UNSIGNED,
+				allowNull: true,
+				references: {
+					model: "branch",
+					key: "id",
+				},
+			},
 		},
 		{
 			tableName: "users",

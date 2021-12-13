@@ -113,13 +113,18 @@ db.form_templates.belongsTo(db.users);
 db.req_status.hasMany(db.items);
 db.items.belongsTo(db.req_status)
 
+db.items.hasMany(db.request);
+db.request.belongsTo(db.items)
+
 
 db.req_status.hasMany(db.request);
 db.request.belongsTo(db.req_status)
 
 db.currencies.hasMany(db.workflows);
-db.workflows.belongsTo(db.currencies)
+db.workflows.belongsTo(db.currencies);
 
+db.company.hasMany(db.workflows);
+db.workflows.belongsTo(db.company);
 
 db.sequelize
   .sync()

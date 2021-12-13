@@ -56,16 +56,19 @@ module.exports = function (sequelize, DataTypes) {
 			suggestion: {
 				type: DataTypes.TEXT,
 			},
+			uploadFileName: {
+				type: DataTypes.STRING,
+			},
 		},
-		{
-			indexes: [
-				//Нэг хүн дээр нэг гэрээний хүсэлт олон ирэхгүй
-				{
-					unique: true,
-					fields: ['itemId', 'recieveUser']
-				}
-			]
-		},
+		// {
+		// 	indexes: [
+		// 		//Нэг хүн дээр нэг гэрээний хүсэлт олон ирэхгүй
+		// 		{
+		// 			unique: true,
+		// 			fields: ['itemId', 'recieveUser']
+		// 		}
+		// 	]
+		// },
 		{
 			tableName: "request",
 			timestamps: true,

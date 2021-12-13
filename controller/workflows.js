@@ -13,7 +13,7 @@ exports.getworkflows = asyncHandler(async (req, res, next) => {
     query.where = req.query
   }
 
-  query.include=[{ model: req.db.currencies}]
+  query.include=[{ model: req.db.currencies},{model:req.db.company}]
   const workflows = await req.db.workflows.findAll(query);
 
   res.status(200).json({

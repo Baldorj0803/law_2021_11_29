@@ -5,47 +5,35 @@ const paginate = require("../utils/paginate");
 
 
 exports.getworkflow_templates = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 100;
-  const sort = req.query.sort;
-  let select = req.query.select;
-
-  if (select) {
-    select = select.split(" ");
-  }
-
-  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
-
+  let where = ""
   if (req.query) {
-    query.where = req.query;
+    let key = Object.keys(req.query)
+    let value = Object.values(req.query)
+    key.map((k, i) => {
+      (i === 0) ? where = where + `where ${k}=${value[i]} ` : where = where + ` and ${k}=${value[i]}`;
+    })
   }
 
-  const pagination = await paginate(page, limit, req.db.workflow_templates, query);
+  let query = `select wt.id,w.id as workflowId,w.min,w.max,cur.code,cmp.name as companyName,wt.step,wt.is_last,r.description as roleDesc,o.name as orgName
+  from workflow_templates wt
+  left join workflows w on wt.workflowId =w.id
+  left join roles r on wt.roleId=r.id
+  left join organizations o on wt.organizationId=o.id
+  left join currencies cur on w.currencyId=cur.id
+  left join company cmp on w.companyId = cmp.id `
 
-  let query = { offset: pagination.start - 1, limit };
-
-  if (select) {
-    query.attributes = select;
+  if (where !== "") {
+    where.substring(0, where.length - 4);
+    console.log(where)
+    query = query + where
   }
 
-
-  if (sort) {
-    query.order = sort
-      .split(" ")
-      .map((el) => [
-        el.charAt(0) === "-" ? el.substring(1) : el,
-        el.charAt(0) === "-" ? "DESC" : "ASC",
-      ]);
-  }
-  
-  const workflow_templates = await req.db.workflow_templates.findAll(query);
-
+  const [uResult, uMeta] = await req.db.sequelize.query(query);
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: workflow_templates,
-    pagination,
+    data: uResult
   });
 });
 

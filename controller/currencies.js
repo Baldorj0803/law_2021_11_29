@@ -15,6 +15,7 @@ exports.getcurrencies = asyncHandler(async (req, res, next) => {
   }
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+  let query = {}
 
   if (req.query) {
     query.where = req.query;
@@ -22,7 +23,7 @@ exports.getcurrencies = asyncHandler(async (req, res, next) => {
 
   const pagination = await paginate(page, limit, req.db.currencies, query);
 
-  let query = { offset: pagination.start - 1, limit };
+  query = { offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -37,7 +38,7 @@ exports.getcurrencies = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
-  
+
   const currencies = await req.db.currencies.findAll(query);
 
 

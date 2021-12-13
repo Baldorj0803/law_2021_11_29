@@ -43,6 +43,13 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
+        workflowTypeId: {
+            type: DataTypes.INTEGER(10).UNSIGNED,
+            references: {
+                model: "workflowTypeId",
+                key: "id",
+            },
+        },
     },
         {
             indexes: [

@@ -50,6 +50,20 @@ exports.getitems = asyncHandler(async (req, res, next) => {
 		pagination,
 	});
 });
+
+exports.myItems = asyncHandler(async (req, res, next) => {
+	let query={}
+	query.include = [{ model: req.db.req_status },{model:req.db.request}];
+	query.where ={userId:req.userId};
+	const items = await req.db.items.findAll(query);
+
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: items,
+	});
+});
+
 exports.getItem = asyncHandler(async (req, res, next) => {
 	let item = await req.db.items.findByPk(req.params.id);
 

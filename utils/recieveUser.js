@@ -2,7 +2,8 @@
 const asyncHandler = require('../middleware/asyncHandle');
 const MyError = require("../utils/myError")
 
-exports.test = asyncHandler(async (req, item, step) => {
+
+exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
 
     //!!! important
     //Дараагийн шат надаас өндөр рольтой байвал бол дамжих 
@@ -11,69 +12,6 @@ exports.test = asyncHandler(async (req, item, step) => {
     //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал дамжих
     //Дараагийн шат надаас бага рольтой бөгөөд орг байхгүй бол алгасах
     //Дараагийн шат надаас бага рольтой бөгөөд орг байвал дамжих
-
-
-    //Тухайн итем аль workflow дээр явж байгааг олоод
-    // let range = await req.db.ranges.findByPk(item.rangeId);
-    //Тухайн workflow ийн сүүлийн 
-    let lastTemplate = await req.db.workflow_templates.findOne({
-        where: {
-            // workflowId: range.workflowId,
-            workflowId:item.workflowId,
-            is_last: 1
-        }
-    })
-    if (!lastTemplate) throw new MyError(`${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
-    let workflow_template;
-    //Хэрвээ сүүлийн алхам биш бол дараагийн алхамыг олно
-    if (lastTemplate.step > step) {
-        for (let index = step; index <= lastTemplate.step; index++) {
-            let checkWorkflowTemplate = await req.db.workflow_templates.findOne({
-                where: {
-                    workflowId: item.workflowId,
-                    step: index,
-                },
-            });
-            //Хэрвээ дараагийн шатны хэрэглэгч надаас өндөр албан тушаалтай бол шууд
-            if (checkWorkflowTemplate.roleId < req.roleId) {
-                workflow_template = checkWorkflowTemplate;
-                break;
-            } else {
-                //Надаас бага эсвэл тэнцүү албан тушаалтай хүн бол , заавал шалгуулах эсэхийг тодорхойлох
-
-                // тэнцүү албан тушаал ч гэсэн ерөнхий /захирлууд/ биш байвал шалгах 
-                if (checkWorkflowTemplate.roleId === req.roleId && checkWorkflowTemplate.organizationId !== null) {
-                    //Тэнцүү албан тушаалтай ч миний дээд удирдлага бол
-                    //Жнь Тэргүүн дэд захирал:Компани -->Дэд захирал компани
-                    let myOrganization = await req.db.organizations.findByPk(req.orgId);
-                    let templateOrg = await req.db.organizations.findByPk(checkWorkflowTemplate.organizationId);
-                    if (myOrganization.parentId === templateOrg.id) {
-                        workflow_template = checkWorkflowTemplate;
-                    }
-                }
-
-                //Надаас бага албан тушаалтай ч заавал шалгуулахаар заагдсан
-                if (checkWorkflowTemplate > req.roleId && checkWorkflowTemplate.organizationId !== null) {
-                    workflow_template = checkWorkflowTemplate
-                }
-            }
-        }
-    } else {
-        console.log(`Сүүлийн алхам`.green)
-        return 0;
-    }
-
-    if (!workflow_template) {
-        throw new MyError(`Дараагийн шатанд хийх үйлдсэл олдсонгүй`,
-            400
-        );
-    }
-    console.log(`Дараагийн шат-${workflow_template.id}`.green)
-    return workflow_template
-})
-
-
-exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
 
     const itemCreatedUser = await req.db.users.findByPk(item.userId);
 

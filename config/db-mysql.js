@@ -25,13 +25,11 @@ const sequelize = new Sequelize(
 );
 
 const models = [
-  require("../models/organization_levels"),
   require("../models/roles"),
   require("../models/permissions"),
   require("../models/responses"),
   require("../models/status"),
   require("../models/form_templates"),
-  require("../models/item_types"),
   require("../models/company"),
   require("../models/req_status"),
   require("../models/organizations"),
@@ -43,7 +41,7 @@ const models = [
   require("../models/request"),
   require("../models/currencies"),
   require("../models/branch"),
-  require("../models/workflowType"),
+require("../models/workflowType"),
 ];
 
 models.forEach((model) => {

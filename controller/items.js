@@ -1,6 +1,5 @@
 const asyncHandler = require("express-async-handler");
 const path = require("path");
-const sequelize = require("sequelize");
 const paginate = require("../utils/paginate");
 const MyError = require("../utils/myError");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");

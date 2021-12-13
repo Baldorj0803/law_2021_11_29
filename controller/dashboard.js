@@ -1,7 +1,6 @@
 
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
-const item_types = require("../models/item_types");
 
 
 exports.totalStat = asyncHandler(async (req, res, next) => {

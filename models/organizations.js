@@ -16,12 +16,11 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false,
             defaultValue: 0
         },
-        level_id: {
+        roleId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
-            allowNull: false,
-            defaultValue: 0,
+            defaultValue: 6,
             references: {
-                model: "organization_levels",
+                model: "roles",
                 key: "id",
               },
         }

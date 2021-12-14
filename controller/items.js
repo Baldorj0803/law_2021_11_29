@@ -56,6 +56,9 @@ exports.myItems = asyncHandler(async (req, res, next) => {
 		{ model: req.db.req_status },
 		{
 			model:req.db.request,
+			order:[
+				['createdAt','DESC']
+			]
 			// include:[
 			// 	{
 			// 		model:req.db.req_status
@@ -102,6 +105,7 @@ exports.getItem = asyncHandler(async (req, res, next) => {
 
 exports.createitem = asyncHandler(async (req, res, next) => {
 	let msg;
+	console.log(req.files)
 	if (!req.files) {
 		throw new MyError("Гэрээгээ оруулна уу", 400);
 	}

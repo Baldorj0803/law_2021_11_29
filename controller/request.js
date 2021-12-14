@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
+const path = require('path')
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -178,6 +179,8 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 
 
 const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
+  console.log("------------------");
+  console.log(request);
   let data = {}
   let updatedRequest = await request.update(body);
   // console.log(itemStatus)
@@ -190,6 +193,45 @@ const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
 })
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
+  let file;
+  if (req.files) {
+    file = req.files.uploadFileName;
+
+    console.log(req.files.uploadFileName);
+
+    console.log(file.mimetype);
+    if (
+      !file.mimetype.endsWith("application/octet-stream") &&
+      !file.mimetype.endsWith("document") &&
+      !file.mimetype.endsWith("msword") &&
+      !file.mimetype.endsWith("pdf")
+    ) {
+      throw new MyError("Та word эсвэл pdf file upload хийнэ үү", 400);
+    }
+
+    if (file.mimetype.endsWith("document") || file.mimetype.endsWith("msword")) {
+      if (process.env.MAX_FILE_SIZE_WORD) {
+        if (file.size > process.env.MAX_FILE_SIZE_WORD) {
+          throw new MyError("Таны файлын хэмжээ их байна", 400);
+        }
+      }
+    }
+
+    if (file.mimetype.endsWith("pdf")) {
+      if (process.env.MAX_FILE_SIZE_PDF) {
+        if (file.size > process.env.MAX_FILE_SIZE_PDF) {
+          throw new MyError("Таны файлын хэмжээ их байна", 400);
+        }
+      }
+    }
+
+    req.body.uploadFileName = `file_${Date.now()}${path.parse(file.name).ext}`;
+    file.name = req.body.file;
+  }
+
+
+
+
   let msg = "", data = {}
 
   let request = await req.db.request.findOne({
@@ -238,6 +280,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       },
     });
 
+    console.log("-----------", wt);
     if (wt) {
       //Сүүлийн алхам батлагдасан
       data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
@@ -259,23 +302,34 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         //Гэхдээ яахав кк
         data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
         msg = "Гэрээ батлагдлаа"
+      } else {
+        new_request.itemId = item.id,
+          new_request.reqStatusId = variable.PENDING;
+        console.log(`Дараагийн шатны роль:${new_request.workflowTemplateId.roleId} ,орг:${new_request.workflowTemplateId.organizationId}`.blue);
+
+        if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, new_request.workflowTemplateId, item)
+
+        new_request.workflowTemplateId = new_request.workflowTemplateId.id
+
+        if (file) file.mv(`./public/files/${file.name}`, (err) => {
+          if (err) {
+            throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+          }
+        });
+
+        if (new_request.workflowTemplateId === 0) {
+
+          new_request = await req.db.request.create(new_request);
+        }
+
+        // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
+        // item.reqStatusId = variable.COMPLETED;
+        let updated_item = await item.update({ reqStatusId: variable.COMPLETED });
+        request = await request.update(req.body)
+        data = { ...data, new_request }
+        data = { ...data, updated_item }
+        data = { ...data, request }
       }
-      new_request.itemId = item.id,
-        new_request.reqStatusId = variable.PENDING;
-      console.log(`Дараагийн шатны роль:${new_request.workflowTemplateId.roleId} ,орг:${new_request.workflowTemplateId.organizationId}`.blue);
-
-      if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, new_request.workflowTemplateId, item)
-
-      new_request.workflowTemplateId = new_request.workflowTemplateId.id
-      new_request = await req.db.request.create(new_request);
-
-      // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
-      // item.reqStatusId = variable.COMPLETED;
-      let updated_item = await item.update({ reqStatusId: variable.COMPLETED });
-      request = await request.update(req.body)
-      data = { ...data, new_request }
-      data = { ...data, updated_item }
-      data = { ...data, request }
     }
   }
 
@@ -342,22 +396,21 @@ exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
 exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) => {
 
 
-  if (!req.params.requestId || !req.params.fileName||!req.params.itemId) {
+  if (!req.params.requestId || !req.params.uploadFileName || !req.params.itemId) {
     throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
   }
 
   let request = await req.db.request.findOne({
     where: {
       itemId: req.params.itemId,
-      recieveUser: req.userId,
-      uploadFileName:fileName,
+      id: req.params.requestId,
+      uploadFileName: req.params.uploadFileName,
     }
   })
   if (!request) {
-    throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+    throw new MyError(`${req.params.uploadFileName} файлыг татах боломжгүй байна`, 400)
   }
-
-  res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
+  res.download(process.env.FILE_PATH + `/files/${req.params.uploadFileName}`, function (err) {
     if (err) {
       console.log(err);
       res.status(404).end()

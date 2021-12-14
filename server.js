@@ -59,7 +59,7 @@ var corsOptions = {
 // Body parser
 app.use(express.json());
 app.use(fileupload({
-  createParentPath:true
+  createParentPath: true
 }));
 app.use(cors());
 app.use("/static", express.static(path.join(__dirname, "public")));
@@ -70,21 +70,21 @@ app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1/organizationLevel", organizationLevelsRoutes);
 app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/permissions", permissionsRoutes);
-app.use("/api/v1/response",responseRoutes );
-app.use("/api/v1/status",statusRoutes );
-app.use("/api/v1/formTemplates",formTemplatesRoutes );
+app.use("/api/v1/response", responseRoutes);
+app.use("/api/v1/status", statusRoutes);
+app.use("/api/v1/formTemplates", formTemplatesRoutes);
 app.use("/api/v1/itemTypes", itemTypesRoutes);
-app.use("/api/v1/company",companyRoutes );
-app.use("/api/v1/reqStatus",reqStatusRoutes );
+app.use("/api/v1/company", companyRoutes);
+app.use("/api/v1/reqStatus", reqStatusRoutes);
 app.use("/api/v1/organizations", organizationsRoutes);
 app.use("/api/v1/roleHasPemissions", roleHasPemissionsRoutes);
 app.use("/api/v1/workflows", workflowsRoutes);
-app.use("/api/v1/users",usersRoutes );
-app.use("/api/v1/workflowTemplates",workflowTemplatesRoutes );
-app.use("/api/v1/items",itemsRoutes );
-app.use("/api/v1/request",requestRoutes );
-app.use("/api/v1/currencies",currenciesRoutes );
-app.use("/api/v1/dashboard",dashboardRoutes);
+app.use("/api/v1/users", usersRoutes);
+app.use("/api/v1/workflowTemplates", workflowTemplatesRoutes);
+app.use("/api/v1/items", itemsRoutes);
+app.use("/api/v1/request", requestRoutes);
+app.use("/api/v1/currencies", currenciesRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 app.use(errorHandler);
 
@@ -125,6 +125,12 @@ db.workflows.belongsTo(db.currencies);
 
 db.company.hasMany(db.workflows);
 db.workflows.belongsTo(db.company);
+
+// db.users.hasMany(db.request);
+// db.request.belongsTo(db.users);
+
+// db.request.hasMany(db.workflow_templates)
+// db.workflow_templates.belongsTo(db.request)
 
 db.sequelize
   .sync()

@@ -6,7 +6,7 @@ const {
   createitem,
   updateitem,
   deleteitem,
-  getItem,myItems
+  getItem,myItems,downloadItemFile
 } = require("../controller/items");
 
 const router = express.Router();
@@ -19,6 +19,7 @@ router.use(protect);
 router.route('/').get(getitems);
 router.route("/myitem").get(myItems);
 router.route('/:id').get(getItem);
+router.route('/:itemId/:fileName').get(downloadItemFile);
 router.route('/create').post(createitem);
 router.route("/update/:id").post(updateitem);
 router.route("/delete/:id").post(deleteitem);

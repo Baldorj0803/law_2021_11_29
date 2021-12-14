@@ -52,9 +52,32 @@ exports.getitems = asyncHandler(async (req, res, next) => {
 
 exports.myItems = asyncHandler(async (req, res, next) => {
 	let query={}
-	query.include = [{ model: req.db.req_status },{model:req.db.request}];
+	query.include = [
+		{ model: req.db.req_status },
+		{
+			model:req.db.request,
+			// include:[
+			// 	{
+			// 		model:req.db.req_status
+			// 	}
+			// ]
+		}];
 	query.where ={userId:req.userId};
-	const items = await req.db.items.findAll(query);
+	const items = await req.db.items.findAll({
+		where:{userId:req.userId},
+		include :[
+			{ model: req.db.req_status },
+			{
+				model:req.db.request,
+				include:[
+					{
+						model:req.db.req_status
+					}
+				]
+			}]
+	});
+
+	
 
 	res.status(200).json({
 		code: res.statusCode,
@@ -122,10 +145,11 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	req.body.typeId = variable.DRAFT;
 	req.body.workflowId = parseInt(req.body.workflowId);
 	req.body.company = parseInt(req.body.company);
+	req.body.reqStatusId=variable.DRAFT;
 	const newitem = await req.db.items.create(req.body);
 	msg = "Файл амжилттай хадгалагдлаа. ";
 
-	// //хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
+	//хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
 	let new_request = {};
 	let useTemplate = await getWorkflowTemplate(req, newitem, 1)
 	if (useTemplate === 0) {
@@ -205,3 +229,29 @@ exports.deleteitem = asyncHandler(async (req, res, next) => {
 		data: item,
 	});
 });
+
+
+exports.downloadItemFile = asyncHandler(async (req, res, next) => {
+
+	if (!req.params.itemId || !req.params.fileName) {
+	  throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+	}
+  
+	let item = await req.db.items.findOne({
+	  where: {
+		id: req.params.itemId,
+		userId: req.userId,
+		file:req.params.fileName
+	  }
+	})
+	if (!item) {
+	  throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+	}
+
+	res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
+	  if (err) {
+		console.log(err);
+		res.status(404).end()
+	  }
+	});
+  });

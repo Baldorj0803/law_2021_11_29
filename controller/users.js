@@ -87,8 +87,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //Имэйл  хайх
-  let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
+  let u = await req.db.users.findByPk(30)
+  console.log(u);
 
+  console.log(req.body);
+  let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
+  console.log(user);
   if (!user) {
     throw new Error("Утасны дугаар нууц үг буруу байна", 401);
   }

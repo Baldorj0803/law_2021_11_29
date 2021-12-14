@@ -228,8 +228,10 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
     data = await createNextReq(item, request, req.body, variable.CANCELED,)
     msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
+    console.log(request)
+    console.log(request.workflowTemplateId);
     //хэрэв зөвшөөрсөн хүсэлт ирвэл сүүлийн алхам эсэхийг шалгаад батлагдсан эсэхийг тодорхойлох
-    let wt = await req.db.workflow_templates.findOne({
+    let wt = await req.db.workflow_templates.findAll({
       where: {
         id: request.workflowTemplateId,
         is_last: 1,
@@ -241,7 +243,6 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
       msg = "Гэрээ батлагдлаа"
     } {
-
       // id, modifiedBy, workflowTemplateId, itemId, responseId, reqStatusId, recieveUser, suggestion, createdAt, updatedAt
       let new_request = {};
       //Одоогийн тэмплэйтийг олох
@@ -252,6 +253,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       });
       //Дараагийн хүсэлт илгээгдэх темплэйтийг олох
       new_request.workflowTemplateId = await getWorkflowTemplate(req, item, wt.step + 1)
+      console.log(new_request.workflowTemplateId)
       if (new_request.workflowTemplateId === 0) {
         //Сүүлийн алхам гэж үзэх бөгөөд дээр шалгасан болохоор иишээ орно гэж бодохгүй байна
         //Гэхдээ яахав кк
@@ -326,6 +328,33 @@ exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
   })
   if (!item) {
     throw new MyError(`Файл олдсонгүй`, 400)
+  }
+
+  res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(404).end()
+    }
+  });
+});
+
+//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг файл
+exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) => {
+
+
+  if (!req.params.requestId || !req.params.fileName||!req.params.itemId) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let request = await req.db.request.findOne({
+    where: {
+      itemId: req.params.itemId,
+      recieveUser: req.userId,
+      uploadFileName:fileName,
+    }
+  })
+  if (!request) {
+    throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
   }
 
   res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {

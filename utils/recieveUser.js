@@ -1,17 +1,11 @@
 
+const { createUser } = require('../controller/users');
 const asyncHandler = require('../middleware/asyncHandle');
+const organizations = require('../models/organizations');
 const MyError = require("../utils/myError")
 
 
 exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
-
-    //!!! important
-    //Дараагийн шат надаас өндөр рольтой байвал бол дамжих 
-    //Дараагийн шат надтай ижил рольтой бөгөөд орг байхгүй бол алгасах
-    //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани роль биш байвал дамжих
-    //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал дамжих
-    //Дараагийн шат надаас бага рольтой бөгөөд орг байхгүй бол алгасах
-    //Дараагийн шат надаас бага рольтой бөгөөд орг байвал дамжих
 
     const itemCreatedUser = await req.db.users.findByPk(item.userId);
 
@@ -28,9 +22,10 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
             is_last: 1
         }
     })
+    console.log(lastTemplate.step)
+    console.log(step)
     if (!lastTemplate) throw new MyError(`${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
-
-    if (lastTemplate.step > step) {
+    if (lastTemplate.step >= step) {
         for (let index = step; index <= lastTemplate.step; index++) {
             //Дараагийн алхамд шалгагдад workflow ийн template
             let checkWorkflowTemplate = await req.db.workflow_templates.findOne({
@@ -40,33 +35,39 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 },
             });
 
-            if (checkWorkflowTemplate.roleId < itemCreatedUser.roleId) {
-                //Дараагийн шат надаас өндөр рольтой байвал бол дамжих
+            if (checkWorkflowTemplate.roleId && checkWorkflowTemplate.organizationId) {
+                //org зааж өгсөн бол заавал дамжина
                 workflow_template = checkWorkflowTemplate
+                console.log("орг зааж өгсөн тул шууд дамжлаа".bgMagenta);
                 break;
-            } else if (checkWorkflowTemplate > itemCreatedUser.roleId) {
-                //Дараагийн шат надаас бага рольтой бөгөөд орг байхгүй бол алгасах
-                //Дараагийн шат надаас бага рольтой бөгөөд орг байвал дамжих
-                if (checkWorkflowTemplate.organizationId !== null) {
-                    workflow_template = checkWorkflowTemplate
-                    break;
-                }
-            } else if (checkWorkflowTemplate === itemCreatedUser.roleId) {
-                //Дараагийн шат надтай ижил рольтой бөгөөд орг байхгүй бол алгасах
-                //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани роль биш байвал дамжих
-                //Дараагийн шат надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал дамжих
-                if (itemCreatedUser.roleId === 1) {
-                    let myOrganization = await req.db.organizations.findByPk(req.orgId);
-                    let templateOrg = await req.db.organizations.findByPk(checkWorkflowTemplate.organizationId);
-                    if (myOrganization.parentId === templateOrg.id) {
-                        workflow_template = checkWorkflowTemplate;
+            } else if (checkWorkflowTemplate.roleId >= createUser.roleId && !checkWorkflowTemplate.organizationId) {
+                console.log("Ерөнхийгөөр заагдсан, надаас бага/ижил/ рольтой тул дараагийн алхамыг шалгах")
+            } else if (checkWorkflowTemplate.roleId && !checkWorkflowTemplate.organizationId) {
+                //ерөнхийгөөр зааж өгсөн
+                //иймээс үүсгэсэн хэрэглэгчийн роль оос олно
+                if (checkWorkflowTemplate.roleId < itemCreatedUser.roleId) {
+                    //Шалгагдаж байгаа оргийн роль үүсгэсэн хэрэглэгчийн ролиос бага байх, шалгагдаж байгаа оргийн эцэг нь 0 биш байх
+                    let myorganization = await req.db.organizations.findByPk(itemCreatedUser.organizationId);
+                    let checkedOrg = await req.db.organizations.findByPk(myorganization.parent_id);
+                    while (checkedOrg.roleId < itemCreatedUser.roleId && checkedOrg.parent_id !== 0) {
+                        console.log(checkedOrg.id + ":Дээр шалгалаа");
+                        console.log(checkedOrg.roleId + "+" + checkWorkflowTemplate.roleId);
+                        if (checkedOrg.roleId === checkWorkflowTemplate.roleId) {
+                            workflow_template = checkWorkflowTemplate;
+                            break;
+                        } else {
+                            checkedOrg = await req.db.organizations.findByPk(checkedOrg.parent_id);
+                            if (!checkedOrg) break;
+                        }
                     }
                 } else {
-                    workflow_template = checkWorkflowTemplate;
+                    console.log(`Шалгах роль /${checkWorkflowTemplate.roleId}/  нь үүсгэсэн хэрэглэгчийн роль ${itemCreatedUser.roleId} оос бага тул алгаслаа `.red)
                 }
             }
+            if (workflow_template) break;
         }
-    } else if (lastTemplate.step === step) {
+    } else if (lastTemplate.step <= step) {
+        console.log("Сүүлийн дамжлага байсан учир дараагийн дамжлагыг тооцоолсонгүй".bgGreen)
         //Энэ нөхцөл тэнцүү үед сүүлийн алхам байх бөгөөд дараагийн алхамыг тооцоолох шаардлагагүй
         return 0;
     }
@@ -75,29 +76,99 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
             400
         );
     }
-    console.log(`Дараагийн шат-${workflow_template.id} ${workflow_template.name}`.green)
+    console.log(`Дараагийн шат-${workflow_template.id} ${workflow_template.organizationId}`.green)
     return workflow_template
 
 })
 
-exports.recieveUser = asyncHandler(async (req, workflow_template,item) => {
+exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
     const itemCreatedUser = await req.db.users.findByPk(item.userId);
 
     if (!itemCreatedUser) throw new MyError(`Энэхүү файлыг үүсгэсэн хэрэглсэг байхгүй байна`)
 
     // !!! read me
     // өндөр роль 0 , бага 10... гэж тооцоологдоно
-    
-    //Надаас бага рольтой бөгөөд орг байвал 1 хүн
-    //Надаас бага рольтой бөгөөд орг байхгүй бол алгасах
-    
-    //Надтай ижил рольтой бөгөөд орг байх бөгөөд компани роль биш 1 хүн
-    //Надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал 1 хүн
-    //Надтай ижил рольтой бөгөөд орг байхгүй бол алгасах
-    
-    //Надаас өндөр рольтой бөгөөд орг байвал 1 хүн
-    //Надаас өндөр рольтой бөгөөд орг байхгүй бол олон хүн
-    
+
+    // Надаас бага рольтой бөгөөд орг байвал 1 хүн
+    // Надаас бага рольтой бөгөөд орг байхгүй бол алгасах
+
+    // Надтай ижил рольтой бөгөөд орг байх бөгөөд компани роль биш 1 хүн
+    // Надтай ижил рольтой бөгөөд орг байх бөгөөд компани рольтой миний дээд хүн байвал 1 хүн
+    // Надтай ижил рольтой бөгөөд орг байхгүй бол алгасах
+
+    // Надаас өндөр рольтой бөгөөд орг байвал 1 хүн
+    // Надаас өндөр рольтой бөгөөд орг байхгүй бол олон хүн
+
+    // let userId;
+    // // ---------------Орг байвал 1 хүн байна
+    // // ---------------Орг байхгүй бол олон хүн байна
+    // if (workflow_template && workflow_template.organizationId && workflow_template.organizationId !== null) {
+    //     //Нэг org байна /Тэр газрын захирал/
+    //     let recieveUser = await req.db.users.findAll({
+    //         where: {
+    //             organizationId: workflow_template.organizationId,
+    //         },
+    //     });
+
+    //     if (recieveUser.length === 0) {
+    //         throw new MyError(
+    //             `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+    //             400
+    //         );
+    //     }
+    //     if (recieveUser.length[1]) {
+    //         throw new MyError(
+    //             `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
+    //             400
+    //         );
+    //     }
+    //     userId = recieveUser[0].id;
+    // } else {
+    //     console.log(workflow_template.roleId + " роль хүртэл давтах");
+    //     console.log(itemCreatedUser.roleId + " миний роль");
+    //     let currentOrg = itemCreatedUser.organizationId;
+    //     for (let index = itemCreatedUser.roleId + 1; index >= workflow_template.roleId; index--) {
+    //         let myOrganization = await req.db.organizations.findByPk(currentOrg);
+    //         let parent = await req.db.organizations.findByPk(myOrganization.parent_id);
+    //         if (parent.level_id === workflow_template.roleId) {
+    //             let recieveUser = await req.db.users.findAll({
+    //                 where: {
+    //                     organizationId: parent.id,
+    //                 },
+    //             });
+    //             if (recieveUser.length === 0) {
+    //                 throw new MyError(
+    //                     `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+    //                     400
+    //                 );
+    //             }
+
+    //             if (recieveUser[1]) {
+    //                 throw new MyError(
+    //                     `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
+    //                     400
+    //                 );
+    //             }
+    //             userId = recieveUser[0].id;
+    //             break;
+    //         }
+    //         currentOrg = parent.id
+    //     }
+    //     if (!userId) {
+    //         throw new MyError(
+    //             `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+    //             400
+    //         );
+    //     }
+    // }
+
+
+    // !!! read me
+    // өндөр роль 0 , бага 10... гэж тооцоологдоно
+
+    // Орг байвал 1 хүн
+    // Орг байхгүй бол алгасах
+
     let userId;
     // ---------------Орг байвал 1 хүн байна
     // ---------------Орг байхгүй бол олон хүн байна
@@ -111,25 +182,32 @@ exports.recieveUser = asyncHandler(async (req, workflow_template,item) => {
 
         if (recieveUser.length === 0) {
             throw new MyError(
-                 `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+                `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
                 400
             );
         }
-        if (recieveUser.length [1]) {
-            throw new MyError(
-                 `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
-                400
-            );
+        if (recieveUser.length[1]) {
+            // throw new MyError(
+            //     `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
+            //     400
+            // );
+
+            //Тухайн алба дээр 1 ээс олон хүн байгаа бөгөөд аль салбарт хамаарайлтай хүмүүсээс хайна
+            let u = recieveUser.filter(u => u.branchId);
+            if (!u) throw new MyError(`${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`, 400);
+
+            //users ээс аль вальют сонгосноор хайх
+
         }
         userId = recieveUser[0].id;
     } else {
         console.log(workflow_template.roleId + " роль хүртэл давтах");
         console.log(itemCreatedUser.roleId + " миний роль");
         let currentOrg = itemCreatedUser.organizationId;
-        for (let index = itemCreatedUser.roleId+1; index >= workflow_template.roleId; index--) {
+        for (let index = itemCreatedUser.roleId + 1; index >= workflow_template.roleId; index--) {
             let myOrganization = await req.db.organizations.findByPk(currentOrg);
             let parent = await req.db.organizations.findByPk(myOrganization.parent_id);
-            if (parent.level_id === workflow_template.roleId) {
+            if (parent.roleId === workflow_template.roleId) {
                 let recieveUser = await req.db.users.findAll({
                     where: {
                         organizationId: parent.id,
@@ -137,30 +215,29 @@ exports.recieveUser = asyncHandler(async (req, workflow_template,item) => {
                 });
                 if (recieveUser.length === 0) {
                     throw new MyError(
-                         `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+                        `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
                         400
                     );
                 }
 
                 if (recieveUser[1]) {
                     throw new MyError(
-                         `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
+                        `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
                         400
                     );
                 }
                 userId = recieveUser[0].id;
                 break;
             }
-            currentOrg=parent.id
+            currentOrg = parent.id
         }
         if (!userId) {
             throw new MyError(
-                 `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
+                `Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`,
                 400
             );
         }
     }
-
     console.log(`Хүлээн авах хэрэглэгч: ${userId}`.green);
     return userId;
 })

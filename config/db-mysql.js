@@ -27,7 +27,6 @@ const sequelize = new Sequelize(
 const models = [
   require("../models/roles"),
   require("../models/permissions"),
-  require("../models/responses"),
   require("../models/status"),
   require("../models/form_templates"),
   require("../models/company"),

@@ -3,7 +3,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
-const path = require('path')
+const path = require('path');
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -54,6 +54,9 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
 
 exports.getrequest = asyncHandler(async (req, res, next) => {
 
+  let request = await req.db.request.findByPk(req.params.requestId);
+  console.log(`${req.params.id} id тай хүсэлт олдсонгүй`);
+  if (!request) throw new MyError(`Хүсэлт олдсонгүй`);
   //Өөрт ирсэн хүсэлтийг харах боломжтой учир userId гаар шүүв
   if (!req.params.requestId) {
     throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
@@ -67,18 +70,31 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
   left join company c on i.company=c.id
   left join users u on i.userId=u.id
   left join organizations o on u.organizationId=o.id
-  where r.id=${req.params.requestId} and r.recieveUser=${req.userId}`
+  where r.id=${req.params.requestId} and r.recieveUser=${req.userId}`;
 
   const [uResult, uMeta] = await req.db.sequelize.query(query);
+
+  if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
+
+  let findFile = `select wt.id as requestId,uploadFileName,r.itemId
+  from request r
+  left join workflow_templates wt on r.workflowTemplateId=wt.id
+  where r.uploadFileName is not null and r.itemId=${request.itemId}
+  order by wt.step desc
+  limit 1;`;
+
 
   if (uResult.length === 0) {
     throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
   }
 
+  const [fResult, fMeta] = await req.db.sequelize.query(findFile);
+
   res.status(200).json({
     code: res.statusCode,
     message: "success",
     data: uResult,
+    lastFile: fResult,
   });
 });
 
@@ -193,13 +209,10 @@ const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
 })
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
+  console.log(req.body)
   let file;
   if (req.files) {
     file = req.files.uploadFileName;
-
-    console.log(req.files.uploadFileName);
-
-    console.log(file.mimetype);
     if (
       !file.mimetype.endsWith("application/octet-stream") &&
       !file.mimetype.endsWith("document") &&
@@ -226,7 +239,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
     }
 
     req.body.uploadFileName = `file_${Date.now()}${path.parse(file.name).ext}`;
-    file.name = req.body.file;
+    file.name = req.body.uploadFileName;
   }
 
 
@@ -270,10 +283,9 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
     data = await createNextReq(item, request, req.body, variable.CANCELED,)
     msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
-    console.log(request)
-    console.log(request.workflowTemplateId);
+    console.log("Хуучин хүсэлтийн дамжлагын дугаар:", request.workflowTemplateId);
     //хэрэв зөвшөөрсөн хүсэлт ирвэл сүүлийн алхам эсэхийг шалгаад батлагдсан эсэхийг тодорхойлох
-    let wt = await req.db.workflow_templates.findAll({
+    let wt = await req.db.workflow_templates.findOne({
       where: {
         id: request.workflowTemplateId,
         is_last: 1,
@@ -282,10 +294,11 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
 
     console.log("-----------", wt);
     if (wt) {
+      console.log('Сүүлийн алхам нөхцөл рүү орлооо'.red);
       //Сүүлийн алхам батлагдасан
       data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
       msg = "Гэрээ батлагдлаа"
-    } {
+    } else {
       // id, modifiedBy, workflowTemplateId, itemId, responseId, reqStatusId, recieveUser, suggestion, createdAt, updatedAt
       let new_request = {};
       //Одоогийн тэмплэйтийг олох
@@ -296,7 +309,8 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       });
       //Дараагийн хүсэлт илгээгдэх темплэйтийг олох
       new_request.workflowTemplateId = await getWorkflowTemplate(req, item, wt.step + 1)
-      console.log(new_request.workflowTemplateId)
+      console.log("Дараагийн алхамын id:", new_request.workflowTemplateId)
+
       if (new_request.workflowTemplateId === 0) {
         //Сүүлийн алхам гэж үзэх бөгөөд дээр шалгасан болохоор иишээ орно гэж бодохгүй байна
         //Гэхдээ яахав кк
@@ -305,11 +319,8 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       } else {
         new_request.itemId = item.id,
           new_request.reqStatusId = variable.PENDING;
-        console.log(`Дараагийн шатны роль:${new_request.workflowTemplateId.roleId} ,орг:${new_request.workflowTemplateId.organizationId}`.blue);
-
-        if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, new_request.workflowTemplateId, item)
-
-        new_request.workflowTemplateId = new_request.workflowTemplateId.id
+        let useTemplate = await req.db.workflow_templates.findByPk(new_request.workflowTemplateId)
+        if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate, item)
 
         if (file) file.mv(`./public/files/${file.name}`, (err) => {
           if (err) {
@@ -317,11 +328,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
           }
         });
 
-        if (new_request.workflowTemplateId === 0) {
-
-          new_request = await req.db.request.create(new_request);
-        }
-
+        new_request = await req.db.request.create(new_request);
         // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
         // item.reqStatusId = variable.COMPLETED;
         let updated_item = await item.update({ reqStatusId: variable.COMPLETED });

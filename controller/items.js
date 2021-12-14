@@ -105,7 +105,6 @@ exports.getItem = asyncHandler(async (req, res, next) => {
 
 exports.createitem = asyncHandler(async (req, res, next) => {
 	let msg;
-	console.log(req.files)
 	if (!req.files) {
 		throw new MyError("Гэрээгээ оруулна уу", 400);
 	}
@@ -155,8 +154,8 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 
 	//хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
 	let new_request = {};
-	let useTemplate = await getWorkflowTemplate(req, newitem, 1)
-	if (useTemplate === 0) {
+	let useTemplateId = await getWorkflowTemplate(req, newitem, 1)
+	if (useTemplateId === 0) {
 		newitem.typeId = variable.PENDING;
 		await newitem.save()
 		res.status(200).json({
@@ -167,9 +166,10 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 			},
 		});
 	}
-	new_request.workflowTemplateId = useTemplate.id;
+	new_request.workflowTemplateId = useTemplateId;
 	new_request.itemId = newitem.id,
 		new_request.reqStatusId = variable.PENDING;
+	let useTemplate = await req.db.workflow_templates.findByPk(useTemplateId)
 	if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate,newitem)
 	new_request = await req.db.request.create(new_request);
 	msg=msg+"Хүсэлт дараагийн шатанд амжилттай илгээгдлээ"
@@ -235,7 +235,7 @@ exports.deleteitem = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.downloadItemFile = asyncHandler(async (req, res, next) => {
+exports.downloadMyItemFile = asyncHandler(async (req, res, next) => {
 
 	if (!req.params.itemId || !req.params.fileName) {
 	  throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
@@ -245,6 +245,39 @@ exports.downloadItemFile = asyncHandler(async (req, res, next) => {
 	  where: {
 		id: req.params.itemId,
 		userId: req.userId,
+		file:req.params.fileName
+	  }
+	})
+	if (!item) {
+	  throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+	}
+
+	res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
+	  if (err) {
+		console.log(err);
+		res.status(404).end()
+	  }
+	});
+  });
+
+
+
+  exports.downloadItemFile = asyncHandler(async (req, res, next) => {
+
+	if (!req.params.itemId || !req.params.fileName) {
+	  throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+	}
+
+	let check = await req.db.request.findOne({
+		where:{
+			recieveUser:req.userId,
+			itemId:req.params.itemId
+		}
+	})
+	if(!check)throw new MyError("Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна")
+	let item = await req.db.items.findOne({
+	  where: {
+		id: req.params.itemId,
 		file:req.params.fileName
 	  }
 	})

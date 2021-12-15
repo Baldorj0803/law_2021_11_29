@@ -61,7 +61,9 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 
 //register
 exports.createUser = asyncHandler(async (req, res, next) => {
+  console.log(req.body);
 
+  req.body.organizationId=req.body.org_id;
   const user = await req.db.users.findOne({ where: { email: req.body.email } })
 
   if (user) {
@@ -87,12 +89,8 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //Имэйл  хайх
-  let u = await req.db.users.findByPk(30)
-  console.log(u);
-
-  console.log(req.body);
   let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
-  console.log(user);
+  
   if (!user) {
     throw new Error("Утасны дугаар нууц үг буруу байна", 401);
   }

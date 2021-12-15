@@ -89,6 +89,9 @@ module.exports = function (sequelize, DataTypes) {
           key: "id",
         },
       },
+      confirmFile: {
+        type: DataTypes.STRING,
+      },
       
     },
     {

@@ -4,6 +4,7 @@ const paginate = require("../utils/paginate");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
 const path = require('path');
+const generateConfirmFile = require('../utils/generateConfirmFile')
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -62,7 +63,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
     throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
   }
   let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
-  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName
+  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId 
   from request r
   left join items i on r.itemId = i.id
   left join workflows w on i.workflowId=w.id
@@ -195,21 +196,32 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 
 
 const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
-  console.log("------------------");
-  console.log(request);
   let data = {}
   let updatedRequest = await request.update(body);
-  // console.log(itemStatus)
-  // item.reqStatusId = itemStatus;
   let updatedItem = await item.update({ reqStatusId: itemStatus });
-  // let updatedItem = await item.save();
+  data = { ...data, updatedRequest }
+  data = { ...data, updatedItem }
+  return data;
+})
+const createNextReqApproved = asyncHandler(async (item, request, body, itemStatus,msg, req) => {
+  //Approved gej vzne
+  console.log("approved gej vzne");
+  let itemBody = { reqStatusId: itemStatus }
+  
+  let data = {}
+  let updatedRequest = await request.update(body);
+  let updatedItem = await item.update(itemBody);
+  if (itemStatus === variable.APPROVED) {
+    let c = await generateConfirmFile(req, item.id);
+    console.log("c:",c);
+    await item.update({confirmFile:c});
+  }
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
   return data;
 })
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
-  console.log(req.body)
   let file;
   if (req.files) {
     file = req.files.uploadFileName;
@@ -280,6 +292,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
     throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
   }
   if (status.slug === "CANCELED") {
+
     data = await createNextReq(item, request, req.body, variable.CANCELED,)
     msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
@@ -292,11 +305,15 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       },
     });
 
-    console.log("-----------", wt);
     if (wt) {
       console.log('Сүүлийн алхам нөхцөл рүү орлооо'.red);
+      if (file) file.mv(`./public/files/${file.name}`, (err) => {
+        if (err) {
+          throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+        }
+      });
       //Сүүлийн алхам батлагдасан
-      data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
+      data = await createNextReqApproved(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа", req)
       msg = "Гэрээ батлагдлаа"
     } else {
       // id, modifiedBy, workflowTemplateId, itemId, responseId, reqStatusId, recieveUser, suggestion, createdAt, updatedAt
@@ -314,7 +331,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       if (new_request.workflowTemplateId === 0) {
         //Сүүлийн алхам гэж үзэх бөгөөд дээр шалгасан болохоор иишээ орно гэж бодохгүй байна
         //Гэхдээ яахав кк
-        data = await createNextReq(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа")
+        data = await createNextReqApproved(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа", req)
         msg = "Гэрээ батлагдлаа"
       } else {
         new_request.itemId = item.id,

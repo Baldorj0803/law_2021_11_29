@@ -8,7 +8,7 @@ const {
 const router = express.Router();
 
 router.route('/totalStat').get(totalStat);
-router.route('/process/:workflowId').get(getRequestProcess);
+router.route('/process').get(getRequestProcess);
 router.route('/getItemDetail').get(getItemDetail);
 
 module.exports = router;

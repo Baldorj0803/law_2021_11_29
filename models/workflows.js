@@ -30,7 +30,9 @@ module.exports = function (sequelize, DataTypes) {
         },
         currencyId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
+            allowNull:true,
             references: {
+                allowNull:true,
                 model: "currencies",
                 key: "id",
             },

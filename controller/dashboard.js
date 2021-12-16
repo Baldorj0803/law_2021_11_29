@@ -1,6 +1,7 @@
 
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
+const variable = require('../config/const')
 
 
 exports.totalStat = asyncHandler(async (req, res, next) => {
@@ -27,19 +28,14 @@ exports.totalStat = asyncHandler(async (req, res, next) => {
 
 exports.getRequestProcess = asyncHandler(async (req, res, next) => {
 
-    if (!req.params.workflowId) {
-        throw new MyError("Дамжлагын дугаар дамжуулаагүй байна");
-    }
-
-    let w = await req.db.workflows.findByPk(req.params.workflowId)
-    if (!w) throw new MyError(`${req.params.workflowId} дугаартай дамжлага олдсонгүй`)
-
-    let query = `select wt.workflowId, step,reqStatusId,count(*) as total,wt.name
-    from request r
-    left join workflow_templates wt on r.workflowTemplateId=wt.id
-    where wt.workflowId=${req.params.workflowId}
-    group by wt.step`
-
+    let query = `select o.name,count(u.organizationId) as total
+    from (select * from request
+    where reqStatusId=2) as r
+    left join users u on r.recieveUser=u.id
+    left join organizations o on u.organizationId = o.id
+    where r.reqStatusId=${variable.PENDING}
+    group by o.id
+    order by o.id asc`;
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 
 

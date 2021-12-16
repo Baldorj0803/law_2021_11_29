@@ -61,11 +61,14 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 
 //register
 exports.createUser = asyncHandler(async (req, res, next) => {
-  console.log(req.body);
-
-  req.body.organizationId=req.body.org_id;
-  const user = await req.db.users.findOne({ where: { email: req.body.email } })
-
+  let user = await req.db.users.findOne({ where: { email: req.body.mobile } })
+  
+  if (user) {
+    throw new Error("Утасны дугаар бүртгэгдсэн байна", 400);
+  }
+  
+   user = await req.db.users.findOne({ where: { email: req.body.email } })
+  
   if (user) {
     throw new Error("Имэйл бүртгэгдсэн байна", 400);
   }

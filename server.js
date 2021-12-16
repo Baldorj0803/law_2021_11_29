@@ -27,6 +27,7 @@ const requestRoutes = require("./routes/request");
 const currenciesRoutes = require("./routes/currencies");
 const dashboardRoutes = require("./routes/dashboard")
 const downloadRoutes = require("./routes/download")
+const generateConfirmFile = require("./utils/generateConfirmFile")
 
 const injectDb = require("./middleware/injectDb");
 
@@ -67,6 +68,12 @@ app.use("/static", express.static(path.join(__dirname, "public")));
 app.use(logger);
 app.use(injectDb(db));
 app.use(morgan("combined", { stream: accessLogStream }));
+app.get("/test",(req,res)=>{
+  let a =  generateConfirmFile(req,5);
+  res.send({
+    hello:"hello"
+  })
+})
 app.use("/api/v1/organizationLevel", organizationLevelsRoutes);
 app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/permissions", permissionsRoutes);
@@ -125,6 +132,18 @@ db.workflows.belongsTo(db.currencies);
 
 db.company.hasMany(db.workflows);
 db.workflows.belongsTo(db.company);
+
+db.users.hasMany(db.items);
+db.items.belongsTo(db.users);
+
+db.workflows.hasMany(db.items);
+db.items.belongsTo(db.workflows);
+
+db.workflowType.hasMany(db.workflows);
+db.workflows.belongsTo(db.workflowType);
+
+// db.workflowType.hasMany(db.workflows);
+// db.workflows.belongsTo(db.workflowType);
 
 // db.users.hasMany(db.request);
 // db.request.belongsTo(db.users);

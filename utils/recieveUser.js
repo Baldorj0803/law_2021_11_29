@@ -1,7 +1,6 @@
 
 const { createUser } = require('../controller/users');
 const asyncHandler = require('../middleware/asyncHandle');
-const organizations = require('../models/organizations');
 const MyError = require("../utils/myError")
 
 

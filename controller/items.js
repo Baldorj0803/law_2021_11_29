@@ -1,9 +1,12 @@
 const asyncHandler = require("express-async-handler");
-const path = require("path");
 const paginate = require("../utils/paginate");
 const MyError = require("../utils/myError");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
+const { saveFIle } = require("../utils/saveFile");
 const variable = require('../config/const')
+const fs = require('fs');
+const { request } = require("express");
+
 exports.getitems = asyncHandler(async (req, res, next) => {
 	const page = parseInt(req.query.page) || 1;
 	const limit = parseInt(req.query.limit) || 100;
@@ -49,15 +52,33 @@ exports.getitems = asyncHandler(async (req, res, next) => {
 		pagination,
 	});
 });
+exports.getConfirmedItems = asyncHandler(async (req, res, next) => {
 
+
+	let query = `SELECT i.id,i.name,i.file,i.trmCont,i.warrantyPeriod,i.reqStatusId,i.createdAt,c.name as companyName, u.name as userName,
+	o.name as orgName,wt.name as workflowTypeName,wt.id as workflowTypeId,c.id as companyId
+	FROM items i 
+	left join workflows w on i.workflowId=w.id
+	left join workflowtype wt on w.workflowTypeId=wt.id
+	left join company c on w.companyId=c.id
+	left join users u on i.userId=u.id
+	left join organizations o on u.organizationId=o.id;`;
+    const [uResult, uMeta] = await req.db.sequelize.query(query);
+
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: uResult,
+	});
+});
 exports.myItems = asyncHandler(async (req, res, next) => {
-	let query={}
+	let query = {}
 	query.include = [
 		{ model: req.db.req_status },
 		{
-			model:req.db.request,
-			order:[
-				['createdAt','DESC']
+			model: req.db.request,
+			order: [
+				['createdAt', 'DESC']
 			]
 			// include:[
 			// 	{
@@ -65,22 +86,23 @@ exports.myItems = asyncHandler(async (req, res, next) => {
 			// 	}
 			// ]
 		}];
-	query.where ={userId:req.userId};
+	query.where = { userId: req.userId };
 	const items = await req.db.items.findAll({
-		where:{userId:req.userId},
-		include :[
+		where: { userId: req.userId },
+		include: [
 			{ model: req.db.req_status },
 			{
-				model:req.db.request,
-				include:[
+				model: req.db.request,
+				include: [
 					{
-						model:req.db.req_status
+						model: req.db.req_status
 					}
 				]
-			}]
+			}],
+		order: [['createdAt', 'DESC']]
 	});
 
-	
+
 
 	res.status(200).json({
 		code: res.statusCode,
@@ -108,47 +130,14 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	if (!req.files) {
 		throw new MyError("Гэрээгээ оруулна уу", 400);
 	}
-	const file = req.files.file;
 
-	if (
-		!file.mimetype.endsWith("application/octet-stream") &&
-		!file.mimetype.endsWith("document") &&
-		!file.mimetype.endsWith("msword") &&
-		!file.mimetype.endsWith("pdf")
-	) {
-		throw new MyError("Та word эсвэл pdf file upload хийнэ үү", 400);
-	}
-
-	if (file.mimetype.endsWith("document") || file.mimetype.endsWith("msword")) {
-		if (process.env.MAX_FILE_SIZE_WORD) {
-			if (file.size > process.env.MAX_FILE_SIZE_WORD) {
-				throw new MyError("Таны файлын хэмжээ их байна", 400);
-			}
-		}
-	}
-
-	if (file.mimetype.endsWith("pdf")) {
-		if (process.env.MAX_FILE_SIZE_PDF) {
-			if (file.size > process.env.MAX_FILE_SIZE_PDF) {
-				throw new MyError("Таны файлын хэмжээ их байна", 400);
-			}
-		}
-	}
-
-	req.body.file = `file_${Date.now()}${path.parse(file.name).ext}`;
-	file.name = req.body.file;
-
-	file.mv(`./public/files/${file.name}`, (err) => {
-		if (err) {
-			throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
-		}
-	});
+	req.body.file = await saveFIle(req.files.file, req.body.file, "files");
 
 	req.body.userId = req.userId;
 	req.body.typeId = variable.DRAFT;
 	req.body.workflowId = parseInt(req.body.workflowId);
 	req.body.company = parseInt(req.body.company);
-	req.body.reqStatusId=variable.DRAFT;
+	req.body.reqStatusId = variable.DRAFT;
 	const newitem = await req.db.items.create(req.body);
 	msg = "Файл амжилттай хадгалагдлаа. ";
 
@@ -160,7 +149,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 		await newitem.save()
 		res.status(200).json({
 			code: res.statusCode,
-			message: "Дараагийн алхам байхгүй"+message,
+			message: "Дараагийн алхам байхгүй" + message,
 			data: {
 				newitem,
 			},
@@ -170,9 +159,9 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 	new_request.itemId = newitem.id,
 		new_request.reqStatusId = variable.PENDING;
 	let useTemplate = await req.db.workflow_templates.findByPk(useTemplateId)
-	if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate,newitem)
+	if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate, newitem)
 	new_request = await req.db.request.create(new_request);
-	msg=msg+"Хүсэлт дараагийн шатанд амжилттай илгээгдлээ"
+	msg = msg + "Хүсэлт дараагийн шатанд амжилттай илгээгдлээ"
 	newitem.reqStatusId = variable.PENDING;
 	await newitem.save()
 
@@ -201,20 +190,85 @@ exports.sendReq = asyncHandler(async (req, res, next) => {
 		data: user,
 	});
 });
-
+//Цуцлагдсан хүсэлтийг дахин илгээхэд ашиглагдана
 exports.updateitem = asyncHandler(async (req, res, next) => {
-	let user = await req.db.items.findByPk(req.params.id);
+	let msg = "";
 
-	if (!user) {
-		throw new MyError(`${req.params.id} id тэй item олдсонгүй.`, 400);
+	if (!req.files) {
+		throw new MyError("Гэрээгээ оруулна уу", 400);
 	}
 
-	user = await user.update(req.body);
+	let item = await req.db.items.findOne({
+		where: {
+			id: req.params.itemId,
+			userId: req.userId,
+		}
+	});
+	let request = await req.db.request.findOne({
+		where: {
+			id: req.params.requestId,
+			reqStatusId: variable.CANCELED
+		}
+	});
+
+	if (!item) {
+		throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
+	}
+
+	if (!request) {
+		throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
+	}
+
+	req.body.file = await saveFIle(req.files.file, req.body.file, "files");
+	req.body.reqStatusId = variable.PENDING;
+	console.log("Шинэ файл:", req.body.file);
+	let removeItemFile = item.file;
+
+	updatedItem = await item.update(req.body);
+
+	if (removeItemFile && removeItemFile != "") {
+		console.log("Өмнөх файл:", removeItemFile);
+		fs.unlink(`./public/files/${removeItemFile}`, (err) => {
+			if (err) {
+				console.error(err)
+				return
+			}
+			msg = ", Цуцалсан хүсэлтийн файлыг устгалаа"
+		})
+	} else msg = "Устгах файл байхгүй байна"
+
+	//Шинээр дараагийн хүсэлт бэлдэх
+	// id, modifiedBy, workflowTemplateId, itemId, reqStatusId, 
+	// recieveUser, suggestion, uploadFileName, createdAt, updatedAt
+	let removeFileName = request.uploadFileName;
+
+	let requestBody = {
+		modifiedBy: null,
+		reqStatusId: variable.PENDING,
+		suggestion: null,
+		uploadFileName: null
+	}
+	updatedReq = await request.update(requestBody);
+
+
+
+	if (removeFileName && removeFileName != "") {
+		fs.unlink(`./public/files/${removeFileName}`, (err) => {
+			if (err) {
+				console.error(err)
+				return
+			}
+			msg = ", Цуцалсан хүсэлтийн файлыг устгалаа"
+		})
+	} else msg = "Устгах файл байхгүй байна"
 
 	res.status(200).json({
 		code: res.statusCode,
-		message: "success",
-		data: user,
+		message: "success" + msg,
+		data: {
+			updatedItem,
+			updatedReq
+		},
 	});
 });
 
@@ -229,7 +283,7 @@ exports.deleteitem = asyncHandler(async (req, res, next) => {
 
 	res.status(200).json({
 		code: res.statusCode,
-		message: "success",
+		message: "success" + msg,
 		data: item,
 	});
 });
@@ -238,57 +292,84 @@ exports.deleteitem = asyncHandler(async (req, res, next) => {
 exports.downloadMyItemFile = asyncHandler(async (req, res, next) => {
 
 	if (!req.params.itemId || !req.params.fileName) {
-	  throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+		throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
 	}
-  
+
 	let item = await req.db.items.findOne({
-	  where: {
-		id: req.params.itemId,
-		userId: req.userId,
-		file:req.params.fileName
-	  }
+		where: {
+			id: req.params.itemId,
+			userId: req.userId,
+			file: req.params.fileName
+		}
 	})
 	if (!item) {
-	  throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+		throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
 	}
 
 	res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
-	  if (err) {
-		console.log(err);
-		res.status(404).end()
-	  }
+		if (err) {
+			console.log(err);
+			res.status(404).end()
+		}
 	});
-  });
+});
 
 
 
-  exports.downloadItemFile = asyncHandler(async (req, res, next) => {
+exports.downloadItemFile = asyncHandler(async (req, res, next) => {
 
 	if (!req.params.itemId || !req.params.fileName) {
-	  throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+		throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
 	}
 
 	let check = await req.db.request.findOne({
-		where:{
-			recieveUser:req.userId,
-			itemId:req.params.itemId
+		where: {
+			recieveUser: req.userId,
+			itemId: req.params.itemId
 		}
 	})
-	if(!check)throw new MyError("Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна")
+	if (!check) throw new MyError("Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна")
 	let item = await req.db.items.findOne({
-	  where: {
-		id: req.params.itemId,
-		file:req.params.fileName
-	  }
+		where: {
+			id: req.params.itemId,
+			file: req.params.fileName
+		}
 	})
 	if (!item) {
-	  throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
+		throw new MyError(`${req.params.fileName} файлыг татах боломжгүй байна`, 400)
 	}
 
 	res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
-	  if (err) {
-		console.log(err);
-		res.status(404).end()
-	  }
+		if (err) {
+			console.log(err);
+			res.status(404).end()
+		}
 	});
-  });
+});
+
+
+exports.getItemByRequest = asyncHandler(async (req, res, next) => {
+
+	let request = await req.db.request.findByPk(req.params.requestId);
+
+	if (!request) {
+		throw new MyError(`${req.params.requestId} id тэй хүсэлт олдсонгүй.`, 400);
+	}
+
+	let item = await req.db.items.findOne({
+		where: {
+			id: request.itemId,
+			userId: req.userId
+		}
+	});
+
+	if (!item) {
+		throw new MyError(`${request.itemId} id тэй гэрээ олдсонгүй.`, 400);
+	}
+
+	res.status(200).json({
+		code: res.statusCode,
+		message: "success",
+		data: item,
+	});
+});

@@ -52,6 +52,7 @@ module.exports = function (sequelize, DataTypes) {
 				unique:true
 			},
 			password: {
+				allowNull:false,
 				type: DataTypes.STRING(255),
 			},
 			last_login_ip: {
@@ -82,6 +83,12 @@ module.exports = function (sequelize, DataTypes) {
 	User.beforeCreate(async (user, options) => {
 		const salt = await bcrypt.genSalt(10);
 		user.password = await bcrypt.hash(user.password, salt);
+	});
+	User.beforeUpdate(async (user, options) => {
+		if(user.password){
+			const salt = await bcrypt.genSalt(10);
+			user.password = await bcrypt.hash(user.password, salt);
+		}
 	});
 
 	User.prototype.checkPassword = async function (password) {

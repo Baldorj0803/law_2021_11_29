@@ -1,10 +1,9 @@
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
-const paginate = require("../utils/paginate");
 const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
 const path = require('path');
-const generateConfirmFile = require('../utils/generateConfirmFile')
+const generateConfirmFile = require('../utils/generateConfirmFile');
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -34,11 +33,18 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
   left join users u on i.userId=u.id 
   left join organizations o on u.organizationId=o.id
     where r.reqStatusId= ${reqStatusId.id}`
-  let isAdmin = await req.db.roles.findOne({
-    where: {
-      name: 'admin'
-    }
+  let isAdmin = await req.db.users.findOne({
+    where:{id:req.userId},
+    include:[
+      {
+        model:req.db.roles,
+        where:{
+          name:"admin"
+        }
+      }
+    ]
   })
+  console.log(isAdmin);
   if (!isAdmin) {
     mainQuery = mainQuery + ` and r.recieveUser=${req.userId}`
   }
@@ -195,10 +201,14 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 });
 
 
-const createNextReq = asyncHandler(async (item, request, body, itemStatus) => {
+const createNextReq = asyncHandler(async (item, request, body, itemStatus,req) => {
+  let itemBoyd = {reqStatusId:itemStatus}
+  if(itemStatus===variable.CANCELED){
+    itemBoyd.canceledUser = req.userId;
+  }
   let data = {}
   let updatedRequest = await request.update(body);
-  let updatedItem = await item.update({ reqStatusId: itemStatus });
+  let updatedItem = await item.update(itemBoyd);
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
   return data;
@@ -293,7 +303,12 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   }
   if (status.slug === "CANCELED") {
 
-    data = await createNextReq(item, request, req.body, variable.CANCELED,)
+    if (file) file.mv(`./public/files/${file.name}`, (err) => {
+      if (err) {
+        throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+      }
+    });
+    data = await createNextReq(item, request, req.body, variable.CANCELED,req)
     msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
     console.log("Хуучин хүсэлтийн дамжлагын дугаар:", request.workflowTemplateId);
@@ -348,7 +363,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         new_request = await req.db.request.create(new_request);
         // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
         // item.reqStatusId = variable.COMPLETED;
-        let updated_item = await item.update({ reqStatusId: variable.COMPLETED });
+        let updated_item = await item.update({ reqStatusId: variable.PENDING });
         request = await request.update(req.body)
         data = { ...data, new_request }
         data = { ...data, updated_item }

@@ -92,7 +92,13 @@ module.exports = function (sequelize, DataTypes) {
       confirmFile: {
         type: DataTypes.STRING,
       },
-      
+      canceledUser: {
+        type: DataTypes.BIGINT,
+        references: {
+          model: "users",
+          key: "id",
+        },
+      },
     },
     {
       tableName: "items",

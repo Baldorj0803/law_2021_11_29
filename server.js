@@ -27,7 +27,6 @@ const requestRoutes = require("./routes/request");
 const currenciesRoutes = require("./routes/currencies");
 const dashboardRoutes = require("./routes/dashboard")
 const downloadRoutes = require("./routes/download")
-const generateConfirmFile = require("./utils/generateConfirmFile")
 
 const injectDb = require("./middleware/injectDb");
 

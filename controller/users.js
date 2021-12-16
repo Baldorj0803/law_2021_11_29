@@ -62,13 +62,13 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 //register
 exports.createUser = asyncHandler(async (req, res, next) => {
   let user = await req.db.users.findOne({ where: { email: req.body.mobile } })
-  
+
   if (user) {
     throw new Error("Утасны дугаар бүртгэгдсэн байна", 400);
   }
-  
-   user = await req.db.users.findOne({ where: { email: req.body.email } })
-  
+
+  user = await req.db.users.findOne({ where: { email: req.body.email } })
+
   if (user) {
     throw new Error("Имэйл бүртгэгдсэн байна", 400);
   }
@@ -93,14 +93,14 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   //Имэйл  хайх
   let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
-  
+
   if (!user) {
     throw new Error("Утасны дугаар нууц үг буруу байна", 401);
   }
 
   //нууц үг шалгах
-  // const ok = await user.checkPassword(password);
-  const ok = (password === user.password) ? true : false;
+  const ok = await user.checkPassword(password);
+  // const ok = (password === user.password) ? true : false;
 
   if (!ok) {
     throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
@@ -129,6 +129,32 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
 
   user = await user.update(req.body);
 
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    data: user,
+  });
+});
+
+
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+
+  let user = await req.db.users.findByPk(req.userId)
+
+  const ok = await user.checkPassword(req.body.password);
+
+  if (!ok) {
+    throw new Error("Хуучин нууц үг буруу байна", 401);
+  }
+
+  let data = {
+    password: req.body.newPassword
+  }
+
+
+  user = await user.update(data);
+
+  user.password=null;
   res.status(200).json({
     code: res.statusCode,
     message: "success",

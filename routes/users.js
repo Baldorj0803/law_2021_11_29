@@ -7,7 +7,7 @@ const {
   deleteUser,
   updateUser,
   getUser,
-  getUsers
+  getUsers,updatePassword
 } = require("../controller/users");
 
 const router = express.Router();
@@ -18,6 +18,7 @@ router.route("/create").post(createUser);
 router.use(protect);
 router.route('/').get(getUsers);
 router.route("/:id").get(getUser);
+router.route("/update/password").post(updatePassword);
 router.route("/update/:id").post(authorize,updateUser);
 router.route("/delete/:id").post(deleteUser);
 

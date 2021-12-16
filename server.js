@@ -67,13 +67,7 @@ app.use("/static", express.static(path.join(__dirname, "public")));
 // app.use(cors(corsOptions));
 app.use(logger);
 app.use(injectDb(db));
-app.use(morgan("combined", { stream: accessLogStream }));
-app.get("/test",(req,res)=>{
-  let a =  generateConfirmFile(req,5);
-  res.send({
-    hello:"hello"
-  })
-})
+// app.use(morgan("combined", { stream: accessLogStream }));
 app.use("/api/v1/organizationLevel", organizationLevelsRoutes);
 app.use("/api/v1/roles", rolesRoutes);
 app.use("/api/v1/permissions", permissionsRoutes);

@@ -37,14 +37,7 @@ const db = require("./config/db-mysql");
 
 const app = express();
 
-
-// create a write stream (in append mode)
-var accessLogStream = rfs.createStream("access.log", {
-  interval: "1d", // rotate daily
-  path: path.join(__dirname, "log"),
-});
-
-var whitelist = ['http://localhost:3000']
+var whitelist = [process.env.WHITELIST]
 var corsOptions = {
   origin: function (origin, callback) {
     console.log(origin)
@@ -61,9 +54,9 @@ app.use(express.json());
 app.use(fileupload({
   createParentPath: true
 }));
-app.use(cors());
+// app.use(cors());
+app.use(cors(corsOptions));
 app.use("/static", express.static(path.join(__dirname, "public")));
-// app.use(cors(corsOptions));
 app.use(logger);
 app.use(injectDb(db));
 // app.use(morgan("combined", { stream: accessLogStream }));

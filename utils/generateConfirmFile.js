@@ -10,8 +10,7 @@ module.exports = asyncHandler(async (req, itemId) => {
 
     const item = await req.db.items.findOne({
         where: {
-            // id: itemId,
-            id: 11,
+            id: itemId, 
             reqStatusId: variable.APPROVED,
         }
     });

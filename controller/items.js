@@ -62,7 +62,8 @@ exports.getConfirmedItems = asyncHandler(async (req, res, next) => {
 	left join workflowtype wt on w.workflowTypeId=wt.id
 	left join company c on w.companyId=c.id
 	left join users u on i.userId=u.id
-	left join organizations o on u.organizationId=o.id;`;
+	left join organizations o on u.organizationId=o.id
+	where i.reqStatusId=5`;
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 
 	res.status(200).json({

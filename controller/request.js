@@ -62,8 +62,7 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
 exports.getrequest = asyncHandler(async (req, res, next) => {
 
   let request = await req.db.request.findByPk(req.params.requestId);
-  console.log(`${req.params.id} id тай хүсэлт олдсонгүй`);
-  if (!request) throw new MyError(`Хүсэлт олдсонгүй`);
+  if (!request) throw new MyError(`${req.params.requestId} id тай хүсэлт олдсонгүй`);
   //Өөрт ирсэн хүсэлтийг харах боломжтой учир userId гаар шүүв
   if (!req.params.requestId) {
     throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
@@ -83,7 +82,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
 
   if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
 
-  let findFile = `select wt.id as requestId,uploadFileName,r.itemId
+  let findFile = `select r.id as requestId,uploadFileName,r.itemId
   from request r
   left join workflow_templates wt on r.workflowTemplateId=wt.id
   where r.uploadFileName is not null and r.itemId=${request.itemId}

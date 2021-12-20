@@ -41,3 +41,40 @@ exports.saveFIle = asyncHandler(async (file,fileName,folderName) => {
 	});
     return fileName;
 })
+
+
+
+
+exports.checkFile = asyncHandler(async (file) => {
+
+	
+    if (
+      !file.mimetype.endsWith("application/octet-stream") &&
+      !file.mimetype.endsWith("document") &&
+      !file.mimetype.endsWith("msword") &&
+      !file.mimetype.endsWith("pdf")
+    ) {
+      throw new MyError("Та word эсвэл pdf file upload хийнэ үү", 400);
+    }
+
+    if (file.mimetype.endsWith("document") || file.mimetype.endsWith("msword")) {
+      if (process.env.MAX_FILE_SIZE_WORD) {
+        if (file.size > process.env.MAX_FILE_SIZE_WORD) {
+          throw new MyError("Таны файлын хэмжээ их байна", 400);
+        }
+      }
+    }
+
+    if (file.mimetype.endsWith("pdf")) {
+      if (process.env.MAX_FILE_SIZE_PDF) {
+        if (file.size > process.env.MAX_FILE_SIZE_PDF) {
+          throw new MyError("Таны файлын хэмжээ их байна", 400);
+        }
+      }
+    }
+
+    file.name= `file_${Date.now()}${path.parse(file.name).ext}`;
+    
+
+	return file;
+})

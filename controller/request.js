@@ -201,7 +201,7 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 
 
 const createNextReq = asyncHandler(async (item, request, body, itemStatus,req) => {
-  let itemBoyd = {reqStatusId:itemStatus}
+  let itemBoyd = {reqStatusId:itemStatus,file:item.file}
   if(itemStatus===variable.CANCELED){
     itemBoyd.canceledUser = req.userId;
   }
@@ -296,6 +296,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
   let item = await req.db.items.findByPk(request.itemId);
 
+  item.file=req.body.uploadFileName;
 
   if (!item) {
     throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
@@ -362,7 +363,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         new_request = await req.db.request.create(new_request);
         // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
         // item.reqStatusId = variable.COMPLETED;
-        let updated_item = await item.update({ reqStatusId: variable.PENDING });
+        let updated_item = await item.update({ reqStatusId: variable.PENDING,file:item.file });
         request = await request.update(req.body)
         data = { ...data, new_request }
         data = { ...data, updated_item }

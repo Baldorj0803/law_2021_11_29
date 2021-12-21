@@ -40,7 +40,9 @@ const models = [
   require("../models/request"),
   require("../models/currencies"),
   require("../models/branch"),
-require("../models/workflowType"),
+  require("../models/workflowType"),
+  require("../models/registrations"),
+  require("../models/menus"),
 ];
 
 models.forEach((model) => {

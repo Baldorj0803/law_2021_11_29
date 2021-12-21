@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
 
-exports.getrole_has_permissions = asyncHandler(async (req, res, next) => {
+exports.getroleHasPermissions = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 100;
   const sort = req.query.sort;
@@ -16,13 +16,14 @@ exports.getrole_has_permissions = asyncHandler(async (req, res, next) => {
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
+  let query={}
   if (req.query) {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.role_has_permissions, query);
+  const pagination = await paginate(page, limit, req.db.roleHasPermissions, query);
 
-  let query = { offset: pagination.start - 1, limit };
+   query = { offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -37,14 +38,14 @@ exports.getrole_has_permissions = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
-  
-  const role_has_permissions = await req.db.role_has_permissions.findAll(query);
+  query.include = [{model:req.db.menus}]
+  const roleHasPermissions = await req.db.roleHasPermissions.findAll(query);
 
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: role_has_permissions,
+    data: roleHasPermissions,
     pagination,
   });
 });
@@ -53,7 +54,7 @@ exports.getrole_has_permissions = asyncHandler(async (req, res, next) => {
 
 exports.createrole_has_permission = asyncHandler(async (req, res, next) => {
 
-  const newrole_has_permission = await req.db.role_has_permissions.create(req.body);
+  const newrole_has_permission = await req.db.roleHasPermissions.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
@@ -63,7 +64,7 @@ exports.createrole_has_permission = asyncHandler(async (req, res, next) => {
 
 
 exports.updaterole_has_permission = asyncHandler(async (req, res, next) => {
-  let user = await req.db.role_has_permissions.findByPk(req.params.id);
+  let user = await req.db.roleHasPermissions.findByPk(req.params.id);
 
   if (!user) {
     throw new MyError(`${req.params.id} id тэй role_has_permission олдсонгүй.`, 400);
@@ -80,7 +81,7 @@ exports.updaterole_has_permission = asyncHandler(async (req, res, next) => {
 
 
 exports.deleterole_has_permission = asyncHandler(async (req, res, next) => {
-  let role_has_permission = await req.db.role_has_permissions.findByPk(req.params.id);
+  let role_has_permission = await req.db.roleHasPermissions.findByPk(req.params.id);
 
   if (!role_has_permission) {
     throw new MyError(`${req.params.id} id тэй role_has_permission олдсонгүй.`, 400);

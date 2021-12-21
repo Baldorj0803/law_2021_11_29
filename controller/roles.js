@@ -36,7 +36,6 @@ exports.getRoles = asyncHandler(async (req, res, next) => {
         el.charAt(0) === "-" ? "DESC" : "ASC",
       ]);
   }
-  query.include =[{ model: req.db.role_has_permissions }] 
   const roles = await req.db.roles.findAll(query);
 
 

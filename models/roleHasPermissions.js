@@ -1,65 +1,52 @@
 module.exports = function (sequelize, DataTypes) {
   return sequelize.define(
-    "role_has_permissions",
+    "roleHasPermissions",
     {
-      id:{
+      id: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,
-        autoIncrement: true,
         primaryKey: true,
+        autoIncrement: true,
       },
       permissionId: {
-        type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,
+        type: DataTypes.INTEGER(10).UNSIGNED,
         references: {
           model: "permissions",
           key: "id",
         },
       },
-      roleId: {
-        type: DataTypes.INTEGER(10).UNSIGNED,
+      menuId: {
         allowNull: false,
+        type: DataTypes.INTEGER(10).UNSIGNED,
         references: {
-          model: "roles",
+          model: "menus",
           key: "id",
         },
       },
-      isAdd: {
-        type:DataTypes.ENUM,
-        values:["0","1"],
-        defaultValue:"0"
-         
+      roles: {
+        type: DataTypes.TEXT,
+        get: function () {
+          return JSON.parse(this.getDataValue('roles'));
+        },
+        set: function (value) {
+          this.setDataValue('roles', JSON.stringify(value));
+        },
       },
-      isDelete: {
-        type:DataTypes.ENUM,
-        values:["0","1"],
-        defaultValue:"0"
-         
-      },
-      isEdit: {
-        type:DataTypes.ENUM,
-        values:["0","1"],
-        defaultValue:"0"
-         
-      },
-      isView: {
-        type:DataTypes.ENUM,
-        values:["0","1"],
-        defaultValue:"0"
+      organizations: {
+        type: DataTypes.TEXT,
+        get: function () {
+          return JSON.parse(this.getDataValue('organizations'));
+        },
+        set: function (value) {
+          this.setDataValue('organizations', JSON.stringify(value));
+        },
       },
     },
     {
-      tableName: "role_has_permissions",
+      tableName: "roleHasPermissions",
       timestamps: false,
     },
-    {
-      indexes: [
-          {
-              unique: true,
-              fields: ['permission_id', 'role_id', ]
-          }
-      ]
-  }
   );
 };
 

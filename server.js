@@ -27,6 +27,7 @@ const requestRoutes = require("./routes/request");
 const currenciesRoutes = require("./routes/currencies");
 const dashboardRoutes = require("./routes/dashboard")
 const downloadRoutes = require("./routes/download")
+const registrationRoutes = require("./routes/registrations")
 
 const injectDb = require("./middleware/injectDb");
 
@@ -54,8 +55,8 @@ app.use(express.json());
 app.use(fileupload({
   createParentPath: true
 }));
-// app.use(cors());
-app.use(cors(corsOptions));
+app.use(cors());
+// app.use(cors(corsOptions));
 app.use("/static", express.static(path.join(__dirname, "public")));
 app.use(logger);
 app.use(injectDb(db));
@@ -69,7 +70,7 @@ app.use("/api/v1/itemTypes", itemTypesRoutes);
 app.use("/api/v1/company", companyRoutes);
 app.use("/api/v1/reqStatus", reqStatusRoutes);
 app.use("/api/v1/organizations", organizationsRoutes);
-app.use("/api/v1/roleHasPemissions", roleHasPemissionsRoutes);
+app.use("/api/v1/roleHasPermissions", roleHasPemissionsRoutes);
 app.use("/api/v1/workflows", workflowsRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/workflowTemplates", workflowTemplatesRoutes);
@@ -78,6 +79,7 @@ app.use("/api/v1/request", requestRoutes);
 app.use("/api/v1/currencies", currenciesRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/download", downloadRoutes);
+app.use("/api/v1/registrations", registrationRoutes);
 
 app.use(errorHandler);
 
@@ -85,14 +87,14 @@ app.use(errorHandler);
 // db.book.belongsToMany(db.user, { through: db.comment });
 
 
-db.roles.belongsToMany(db.permissions, { through: db.role_has_permissions });
-db.permissions.belongsToMany(db.roles, { through: db.role_has_permissions });
+// db.roles.belongsToMany(db.permissions, { through: db.role_has_permissions });
+// db.permissions.belongsToMany(db.roles, { through: db.role_has_permissions });
 
-db.permissions.hasMany(db.role_has_permissions);
-db.role_has_permissions.belongsTo(db.permissions);
+// db.permissions.hasMany(db.role_has_permissions);
+// db.role_has_permissions.belongsTo(db.permissions);
 
-db.roles.hasMany(db.role_has_permissions);
-db.role_has_permissions.belongsTo(db.roles)
+// db.roles.hasMany(db.role_has_permissions);
+// db.role_has_permissions.belongsTo(db.roles)
 
 db.roles.hasMany(db.users)
 db.users.belongsTo(db.roles);
@@ -127,6 +129,15 @@ db.items.belongsTo(db.workflows);
 
 db.workflowType.hasMany(db.workflows);
 db.workflows.belongsTo(db.workflowType);
+
+
+
+db.menus.hasMany(db.roleHasPermissions);
+db.roleHasPermissions.belongsTo(db.menus);
+
+
+db.permissions.hasMany(db.roleHasPermissions);
+db.roleHasPermissions.belongsTo(db.permissions);
 
 // db.workflowType.hasMany(db.workflows);
 // db.workflows.belongsTo(db.workflowType);

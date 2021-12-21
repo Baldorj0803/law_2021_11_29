@@ -1,23 +1,28 @@
 module.exports = function (sequelize, DataTypes) {
-  let Roles = sequelize.define('permissions', {
+  let Menus = sequelize.define('menus', {
     id: {
       type: DataTypes.INTEGER(10).UNSIGNED,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,
     },
-    name: {
+    name:{
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    route: {
-      type: DataTypes.STRING(100)
+    to:{
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
-    
+    _tag:{
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+
   },
     {
-      tableName: "permissions",
+      tableName: "menus",
       timestamps: false,
     });
-  return Roles;
+  return Menus;
 };

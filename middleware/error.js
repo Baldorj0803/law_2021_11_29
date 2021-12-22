@@ -1,6 +1,5 @@
 const errorHandler = (err, req, res, next) => {
   console.log(err.stack.cyan.underline);
-
   const error = { ...err };
 
   error.message = err.message;
@@ -14,6 +13,10 @@ const errorHandler = (err, req, res, next) => {
     error.statusCode = 400;
   }
 
+  if(error.no ===1366){
+    error.message = "Дамжуулсан төрөл буруу байна";
+    error.statusCode = 400;  
+  }
 
   if (error.code === 11000) {
     error.message = "Энэ талбарын утгыг давхардуулж өгч болохгүй!";

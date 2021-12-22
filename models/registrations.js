@@ -19,7 +19,7 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
     },
     subCode: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     number: {
@@ -43,7 +43,7 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
     },
     unites: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
     contractOfficer: {
@@ -54,6 +54,12 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    key:{
+      type:DataTypes.VIRTUAL,
+      get:function () {
+        return this.get('id')
+      }
+    }
     
   },
     {

@@ -2,6 +2,7 @@
 const { createUser } = require('../controller/users');
 const asyncHandler = require('../middleware/asyncHandle');
 const MyError = require("../utils/myError")
+const color =require('colors')
 
 
 exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
@@ -26,7 +27,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
     if (!lastTemplate) throw new MyError(`${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`)
     if (lastTemplate.step >= step) {
         for (let index = step; index <= lastTemplate.step; index++) {
-            console.log(`${step} алхам дээр шалгалт хийлээ`.blue);
+            console.log(`${index} алхам дээр шалгалт хийлээ`.blue);
             //Дараагийн алхамд шалгагдад workflow ийн template
             let checkWorkflowTemplate = await req.db.workflow_templates.findOne({
                 where: {
@@ -39,11 +40,23 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 //org зааж өгсөн бол заавал дамжина
                 workflow_template = checkWorkflowTemplate
                 console.log(`орг зааж өгсөн тул ${workflow_template.step} алхамд шууд дамжлаа`.bgMagenta);
-                break;
+                if (workflow_template.organizationId) {
+                    let q = `select * 
+                    from request r
+                    left join users u on r.recieveUser=u.id
+                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${workflow_template.organizationId}`
+                    const [uResult, uMeta] = await req.db.sequelize.query(q);
+                    if(uResult.length===0) {
+                        workflow_template=checkWorkflowTemplate
+                        break;
+                    }
+                    console.log(`Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan);
+                }
             } else if (checkWorkflowTemplate.roleId >= createUser.roleId && !checkWorkflowTemplate.organizationId) {
                 console.log(`${step} алхам дээр надаас бага рольтой ерөнхйигөөр заагдсан тул алгаслаа`);
                 console.log("Ерөнхийгөөр заагдсан, надаас бага/ижил/ рольтой тул дараагийн алхамыг шалгах")
             } else if (checkWorkflowTemplate.roleId && !checkWorkflowTemplate.organizationId) {
+
                 //ерөнхийгөөр зааж өгсөн
                 //иймээс үүсгэсэн хэрэглэгчийн роль оос олно
                 if (checkWorkflowTemplate.roleId < itemCreatedUser.roleId) {
@@ -65,7 +78,22 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                     console.log(`Шалгах роль /${checkWorkflowTemplate.roleId}/  нь үүсгэсэн хэрэглэгчийн роль ${itemCreatedUser.roleId} оос бага тул алгаслаа `.red)
                 }
             }
-            if (workflow_template) break;
+            if (workflow_template) {
+                // тухайн хэрэглэгч дээр дахин ирж байгаа эсэхийг шалгах
+                if (workflow_template.organizationId) {
+                    let q = `select * 
+                    from request r
+                    left join users u on r.recieveUser=u.id
+                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${workflow_template.organizationId}`
+                    const [uResult, uMeta] = await req.db.sequelize.query(q);
+                    if(uResult.length===0) {
+                        workflow_template=checkWorkflowTemplate
+                        break;
+                    }
+                    console.log(`Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan);
+                }
+
+            };
         }
     } else if (lastTemplate.step <= step) {
         console.log("Сүүлийн дамжлага байсан учир дараагийн дамжлагыг тооцоолсонгүй".bgGreen)

@@ -18,10 +18,11 @@ module.exports = asyncHandler(async (req, itemId) => {
     const user = await req.db.users.findByPk(item.userId);
     if (!user) throw new MyError("Хэрэглэгч олдсонгүй", 400)
 
-    let query = `select wt.organizationId,wt.roleId,u.name,wt.step,wt.workflowId
+    let query = `select wt.organizationId,wt.roleId,u.name,wt.step,wt.workflowId,w.workflowTypeId
     from request r
     left join users u on r.modifiedBy=u.id
     left join workflow_templates wt on r.workflowTemplateId=wt.id
+    left join workflows w on wt.workflowId=w.id
     where r.reqStatusId =${variable.COMPLETED}`
 
 
@@ -53,7 +54,7 @@ module.exports = asyncHandler(async (req, itemId) => {
     let gazriin = uResult.filter(i => (i.organizationId === null && i.roleId === 3));
     let ccx = uResult.filter(i => (i.organizationId === 4));
     let ohin = uResult.filter(i => (i.organizationId === 7 || i.organizationId === 6 || i.organizationId === 5));
-    let songon = uResult.filter(i => (i.workflowId === 2));
+    let songon = uResult.filter(i => (i.workflowTypeId === 2));
 
     let h12 = (huuli.length > 0) ? "Тийм" : "Үгүй";
     let h22 = (gazriin.length > 0) ? "Тийм" : "Үгүй";

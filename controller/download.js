@@ -44,7 +44,7 @@ exports.getConfirmFile = asyncHandler(async (req, res, next) => {
     if (!item) throw new MyError("Файл олдсонгүй")
     if (!item.confirmFile||item.confirmFile===null) throw new MyError("Файл олдсонгүй")
 
-    res.download(process.env.FILE_PATH + `/confirmFile/${item.confirmFile}`, function (err) {
+    res.download(process.env.FILE_PATH + `/files/${item.file}`, function (err) {
         if (err) {
             console.log(err);
             res.status(404).end()

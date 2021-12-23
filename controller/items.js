@@ -212,13 +212,9 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
 		}
 	});
 
-	if (!item) {
-		throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
-	}
+	if (!item) throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400)
 
-	if (!request) {
-		throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
-	}
+	if (!request) throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400)
 
 	req.body.file = await saveFIle(req.files.file, req.body.file, "files");
 	req.body.reqStatusId = variable.PENDING;

@@ -100,7 +100,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: uResult,
-    lastFile: fResult,
+    // lastFile: fResult,
   });
 });
 
@@ -296,11 +296,12 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
   let item = await req.db.items.findByPk(request.itemId);
 
-  item.file=req.body.uploadFileName;
+  console.log(`req.body.uploadFileName: ${req.body.uploadFileName}`.bgBlue);
+  if(req.files&&req.body.uploadFileName)item.file=req.body.uploadFileName;
+  console.log(`item.file: ${item.file}`.bgBlue);
 
-  if (!item) {
-    throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
-  }
+  if (!item)throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
+
   if (status.slug === "CANCELED") {
 
     if (file) file.mv(`./public/files/${file.name}`, (err) => {

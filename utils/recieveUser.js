@@ -38,13 +38,13 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
 
             if (checkWorkflowTemplate.roleId && checkWorkflowTemplate.organizationId) {
                 //org зааж өгсөн бол заавал дамжина
-                workflow_template = checkWorkflowTemplate
-                console.log(`орг зааж өгсөн тул ${workflow_template.step} алхамд шууд дамжлаа`.bgMagenta);
-                if (workflow_template.organizationId) {
+                // workflow_template = checkWorkflowTemplate
+                console.log(`орг зааж өгсөн тул ${checkWorkflowTemplate.step} алхамд шууд дамжлаа`.bgMagenta);
+                if (checkWorkflowTemplate.organizationId) {
                     let q = `select * 
                     from request r
                     left join users u on r.recieveUser=u.id
-                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${workflow_template.organizationId}`
+                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${checkWorkflowTemplate.organizationId}`
                     const [uResult, uMeta] = await req.db.sequelize.query(q);
                     if(uResult.length===0) {
                         workflow_template=checkWorkflowTemplate
@@ -67,8 +67,17 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                         console.log(checkedOrg.id + ":Дээр шалгалаа");
                         console.log(checkedOrg.roleId + "+" + checkWorkflowTemplate.roleId);
                         if (checkedOrg.roleId === checkWorkflowTemplate.roleId) {
-                            workflow_template = checkWorkflowTemplate;
-                            break;
+                            let user = await this.recieveUser(req,checkWorkflowTemplate,item);
+                            let isDuplicate = await req.db.request.findOne({
+                                where:{
+                                    itemId:item.id,
+                                    recieveUser:user
+                                }
+                            })
+                            if(!isDuplicate){
+                                workflow_template = checkWorkflowTemplate;
+                                break;
+                            }else console.log(`Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red); break;
                         } else {
                             checkedOrg = await req.db.organizations.findByPk(checkedOrg.parent_id);
                             if (!checkedOrg) break;
@@ -79,20 +88,8 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 }
             }
             if (workflow_template) {
-                // тухайн хэрэглэгч дээр дахин ирж байгаа эсэхийг шалгах
-                if (workflow_template.organizationId) {
-                    let q = `select * 
-                    from request r
-                    left join users u on r.recieveUser=u.id
-                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${workflow_template.organizationId}`
-                    const [uResult, uMeta] = await req.db.sequelize.query(q);
-                    if(uResult.length===0) {
-                        workflow_template=checkWorkflowTemplate
-                        break;
-                    }
-                    console.log(`Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan);
-                }
-
+                workflow_template=checkWorkflowTemplate
+                break;
             };
         }
     } else if (lastTemplate.step <= step) {

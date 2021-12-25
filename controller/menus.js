@@ -5,8 +5,6 @@ const paginate = require("../utils/paginate");
 
 
 exports.getMenus = asyncHandler(async (req, res, next) => {
-  console.log(req.roleId);
-  console.log(req.orgId);
   let myMenu = [];
 
   const menus = await req.db.menus.findAll({
@@ -26,7 +24,6 @@ exports.getMenus = asyncHandler(async (req, res, next) => {
       if (item.roles !== null) {
         let val = item.roles.filter(i => i === (req.roleId) ? req.roleId : "");
         if (val.length === 0) { //миний роль байхгүй бол орг оос хайх
-          console.log(item);
           if (item.organizations&&item.organizations !== null) {
             let val = item.organizations.filter(i => (i === req.orgId) ? req.orgId : "");
             if (val.length > 0) return true;

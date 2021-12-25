@@ -20,7 +20,7 @@ exports.getstatus = asyncHandler(async (req, res, next) => {
     query.where = req.query;
   }
 
-  const pagination = await paginate(page, limit, req.db.statuss, query);
+  const pagination = await paginate(page, limit, req.db.status, query);
 
   let query = { offset: pagination.start - 1, limit };
 
@@ -38,13 +38,13 @@ exports.getstatus = asyncHandler(async (req, res, next) => {
       ]);
   }
   
-  const statuss = await req.db.statuss.findAll(query);
+  const status = await req.db.status.findAll(query);
 
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: statuss,
+    data: status,
     pagination,
   });
 });
@@ -53,7 +53,7 @@ exports.getstatus = asyncHandler(async (req, res, next) => {
 
 exports.createstatus = asyncHandler(async (req, res, next) => {
 
-  const newstatus = await req.db.statuss.create(req.body);
+  const newstatus = await req.db.status.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
@@ -63,7 +63,7 @@ exports.createstatus = asyncHandler(async (req, res, next) => {
 
 
 exports.updatestatus = asyncHandler(async (req, res, next) => {
-  let user = await req.db.statuss.findByPk(req.params.id);
+  let user = await req.db.status.findByPk(req.params.id);
 
   if (!user) {
     throw new MyError(`${req.params.id} id тэй status олдсонгүй.`, 400);
@@ -80,7 +80,7 @@ exports.updatestatus = asyncHandler(async (req, res, next) => {
 
 
 exports.deletestatus = asyncHandler(async (req, res, next) => {
-  let status = await req.db.statuss.findByPk(req.params.id);
+  let status = await req.db.status.findByPk(req.params.id);
 
   if (!status) {
     throw new MyError(`${req.params.id} id тэй status олдсонгүй.`, 400);

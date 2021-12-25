@@ -52,22 +52,22 @@ exports.getroleHasPermissions = asyncHandler(async (req, res, next) => {
 
 
 
-exports.createrole_has_permission = asyncHandler(async (req, res, next) => {
+exports.createroleHasPermission = asyncHandler(async (req, res, next) => {
 
-  const newrole_has_permission = await req.db.roleHasPermissions.create(req.body);
+  const newroleHasPermission = await req.db.roleHasPermissions.create(req.body);
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: newrole_has_permission,
+    data: newroleHasPermission,
   });
 });
 
 
-exports.updaterole_has_permission = asyncHandler(async (req, res, next) => {
+exports.updateroleHasPermission = asyncHandler(async (req, res, next) => {
   let user = await req.db.roleHasPermissions.findByPk(req.params.id);
 
   if (!user) {
-    throw new MyError(`${req.params.id} id тэй role_has_permission олдсонгүй.`, 400);
+    throw new MyError(`${req.params.id} id тэй roleHasPermission олдсонгүй.`, 400);
   }
 
   user = await user.update(req.body);
@@ -80,18 +80,18 @@ exports.updaterole_has_permission = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.deleterole_has_permission = asyncHandler(async (req, res, next) => {
-  let role_has_permission = await req.db.roleHasPermissions.findByPk(req.params.id);
+exports.deleteroleHasPermission = asyncHandler(async (req, res, next) => {
+  let roleHasPermission = await req.db.roleHasPermissions.findByPk(req.params.id);
 
-  if (!role_has_permission) {
-    throw new MyError(`${req.params.id} id тэй role_has_permission олдсонгүй.`, 400);
+  if (!roleHasPermission) {
+    throw new MyError(`${req.params.id} id тэй roleHasPermission олдсонгүй.`, 400);
   }
 
-  await role_has_permission.destroy();
+  await roleHasPermission.destroy();
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: role_has_permission,
+    data: roleHasPermission,
   });
 });

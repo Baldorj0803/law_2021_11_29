@@ -2,7 +2,7 @@ const express = require("express");
 const { protect, authorize } = require("../middleware/protect");
 
 const {
-  getcompany,
+  getcompanies,
   createcompany,
   updatecompany,
   deletecompany
@@ -11,10 +11,11 @@ const {
 const router = express.Router();
 
 router.use(protect);
-router.route('/').get(getcompany);
-router.route('/create').post(createcompany);
-router.route("/update/:id").post(updatecompany);
-router.route("/delete/:id").post(deletecompany);
+// router.route('/').get(authorize,getcompanies);
+router.route('/').get(getcompanies);
+router.route('/create').post(authorize,createcompany);
+router.route("/update/:id").post(authorize,updatecompany);
+router.route("/delete/:id").post(authorize,deletecompany);
 
 
 module.exports = router;

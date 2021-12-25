@@ -2,7 +2,7 @@ const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
-exports.getcompany = asyncHandler(async (req, res, next) => {
+exports.getcompanies = asyncHandler(async (req, res, next) => {
 	const company = await req.db.company.findAll();
 
 	res.status(200).json({

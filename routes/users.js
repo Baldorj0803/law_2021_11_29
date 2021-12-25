@@ -14,13 +14,13 @@ const router = express.Router();
 
 //"/api/v1/users"
 router.route("/login").post(login);
-router.route("/create").post(createUser);
-router.use(protect);
-router.route('/').get(getUsers);
-router.route("/:id").get(getUser);
-router.route("/update/password").post(updatePassword);
+router.use(protect)
+router.route("/update/password").post(authorize,updatePassword);
+router.route("/create").post(authorize,createUser);
+router.route('/').get(authorize,getUsers);
+router.route("/:id").get(authorize,getUser);
 router.route("/update/:id").post(authorize,updateUser);
-router.route("/delete/:id").post(deleteUser);
+router.route("/delete/:id").post(authorize,deleteUser);
 
 
 module.exports = router;

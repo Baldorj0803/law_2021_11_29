@@ -97,6 +97,8 @@ exports.myItems = asyncHandler(async (req, res, next) => {
 				include: [
 					{
 						model: req.db.req_status
+					},{
+						model:req.db.workflow_templates
 					}
 				]
 			}],

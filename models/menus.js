@@ -6,19 +6,27 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       autoIncrement: true,
     },
-    name:{
+    name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    to:{
+    to: {
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    _tag:{
-      type: DataTypes.STRING(255),
-      allowNull: false,
+    type: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
-
+    _tag: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    orderNo: {
+      type: DataTypes.INTEGER(10).UNSIGNED,
+      allowNull: false,
+      unique: true,
+    },
   },
     {
       tableName: "menus",

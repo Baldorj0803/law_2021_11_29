@@ -24,50 +24,54 @@ exports.protect = asyncHandler(async (req, res, next) => {
 	next();
 });
 
+
 exports.authorize = asyncHandler(async (req, res, next) => {
-	// if (!req.userId || !req.roleId) {
-	//   throw new MyError(
-	//     "Та эхлээд логин хийнэ үү",
-	//     401
-	//   );
-	// }
-	// let url = req.originalUrl.replace(req.baseUrl, '')
+	if (!req.userId) {
+		this.protect(req, res, next);
+	}
 
-	// let whereSql, q;
-	// if (req.method === 'GET' && url.substring(0, 1) !== '/') {
-	//   whereSql = 'isView'
-	// } else {
-	//   if (url.substring(0, 1) === '/') {
-	//     url = url.substring(1, url.length);
-	//     url = url.substring(0, url.indexOf('/'));
-	//     switch (url) {
-	//       case 'update':
-	//         whereSql = 'isEdit'
-	//         break;
-	//       case 'create':
-	//         whereSql = 'isAdd'
-	//         break;
-	//       case 'delete':
-	//         whereSql = 'isDelete'
-	//         break;
-	//       default:
-	//         break;
-	//     }
-	//   }
-	// }
+	let structedUrl = req.baseUrl.replace(process.env.BASE_URL, '') 
+	// console.log(structedUrl);
+	if(req.route.path!=="/") structedUrl=structedUrl+req.route.path;
 
-	// if (whereSql !== null) {
-	//   q = "select * from role_has_permissions rp  left join permissions p on  rp.permission_id = p.id where rp.role_id=" + req.roleId + " and p." + whereSql + "='1'"
 
-	//   const [uResult, uMeta] = await req.db.sequelize.query(q);
+	// console.log(structedUrl);
 
-	//   if (uResult.length === 0) {
-	//     throw new MyError(
-	//       "Энэ үйлдлийг хийхэд таны эрх хүрэхгүй байна.",
-	//       401
-	//     );
-	//   }
-	// }
+	let permissions = await req.db.permissions.findOne({
+		where: {
+			route: structedUrl,
+			method:req.method
+		}
+	})
+	// console.log(permissions.organizations);
+	// console.log(permissions.roles);
+	let ok = false;
+	let find;
 
+	if(!permissions)throw new MyError("Энэ үйлдлийг хийхэд таны эрх хүрэхгүй байна", 400); 
+	if (permissions.organizations === null) {
+		ok = checkRole(req.roleId, permissions.roles)
+	} else if (permissions.organizations.length > 0) {
+		find = permissions.organizations.filter(el => el === req.orgId);
+		if (find.length > 0) {
+			ok = true;
+		} else {
+			ok = checkRole(req.roleId, permissions.roles)
+		}
+	}
+
+	if(!ok) throw new MyError("Энэ үйлдлийг хийхэд таны эрх хүрэхгүй байна", 400);
 	next();
 });
+
+
+function checkRole(myRole, roles) {
+	if (roles !== null) {
+		if (roles.length === 0) return false;
+		let filteredRole = roles.filter(r => r === myRole);
+		if (filteredRole.length === 0) return false;
+	}
+
+	return true;
+
+}

@@ -4,6 +4,7 @@ const {
   getRequestProcess,
   getItemDetail
 } = require("../controller/dashboard");
+const {protect,authorize} = require('../middleware/protect')
 
 const router = express.Router();
 

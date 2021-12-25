@@ -10,12 +10,8 @@ const {
 
 const router = express.Router();
 
-// router.use(protect);
-// router.route('/').get(authorize,getorganizations);
-// router.route('/create').post(authorize,createorganization);
-// router.route("/update/:id").post(authorize,updateorganization);
-// router.route("/delete/:id").post(authorize,deleteorganization);
-router.route('/').get(getorganizations);
+router.use(protect);
+router.route('/').get(authorize,getorganizations);
 router.route('/create').post(authorize,createorganization);
 router.route("/update/:id").post(authorize,updateorganization);
 router.route("/delete/:id").post(authorize,deleteorganization);

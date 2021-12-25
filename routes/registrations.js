@@ -5,11 +5,10 @@ const { getregistrations, createregistration, updateregistration, deleteregistra
 
 const router = express.Router();
 
-console.log("routes");
 router.use(protect);
-router.route("/").get(getregistrations).post(createregistration)
+router.route("/").get(authorize, getregistrations).post(authorize, createregistration)
 router.route("/:id")
-    .put(updateregistration)
-    .delete(deleteregistration);
+    .put(authorize, updateregistration)
+    .delete(authorize, deleteregistration);
 
 module.exports = router;

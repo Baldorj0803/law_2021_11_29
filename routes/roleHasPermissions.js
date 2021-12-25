@@ -3,18 +3,18 @@ const { protect, authorize } = require("../middleware/protect");
 
 const {
   getroleHasPermissions,
-  createrole_has_permission,
-  updaterole_has_permission,
-  deleterole_has_permission
+  createroleHasPermission,
+  updateroleHasPermission,
+  deleteroleHasPermission
 } = require("../controller/roleHasPermissions");
 
 const router = express.Router();
 
 router.use(protect);
 router.route('/').get(authorize,getroleHasPermissions);
-router.route('/create').post(authorize,createrole_has_permission);
-router.route("/update/:id").post(authorize,updaterole_has_permission);
-router.route("/delete/:id").post(authorize,deleterole_has_permission);
+router.route('/create').post(authorize,createroleHasPermission);
+router.route("/update/:id").post(authorize,updateroleHasPermission);
+router.route("/delete/:id").post(authorize,deleteroleHasPermission);
 
 
 module.exports = router;

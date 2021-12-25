@@ -15,6 +15,7 @@ console.log("---");
 router.use(protect);
 router.route('/').get(getitems);
 router.route("/myitem").get(myItems);
+//Батлагдсан гэрээнүүд
 router.route('/confirmed').get(getConfirmedItems);
 router.route('/:id').get(getItem);
 //Хүсэлт хүлээн авсан хүн энэхүү файлыг татах

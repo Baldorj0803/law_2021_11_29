@@ -18,7 +18,6 @@ const itemTypesRoutes = require("./routes/item_types");
 const companyRoutes = require("./routes/company");
 const reqStatusRoutes = require("./routes/req_status");
 const organizationsRoutes = require("./routes/organizations");
-const roleHasPemissionsRoutes = require("./routes/roleHasPermissions");
 const workflowsRoutes = require("./routes/workflows");
 const usersRoutes = require("./routes/users");
 const workflowTemplatesRoutes = require("./routes/workflow_templates");
@@ -28,6 +27,8 @@ const currenciesRoutes = require("./routes/currencies");
 const dashboardRoutes = require("./routes/dashboard")
 const downloadRoutes = require("./routes/download")
 const registrationRoutes = require("./routes/registrations")
+const roleHasPermissionsRoutes = require("./routes/roleHasPermissions")
+const menusRoutes = require("./routes/menus")
 
 const injectDb = require("./middleware/injectDb");
 
@@ -70,7 +71,6 @@ app.use("/api/v1/itemTypes", itemTypesRoutes);
 app.use("/api/v1/company", companyRoutes);
 app.use("/api/v1/reqStatus", reqStatusRoutes);
 app.use("/api/v1/organizations", organizationsRoutes);
-app.use("/api/v1/roleHasPermissions", roleHasPemissionsRoutes);
 app.use("/api/v1/workflows", workflowsRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/workflowTemplates", workflowTemplatesRoutes);
@@ -80,6 +80,8 @@ app.use("/api/v1/currencies", currenciesRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/download", downloadRoutes);
 app.use("/api/v1/registrations", registrationRoutes);
+app.use("/api/v1/roleHasPermissions", roleHasPermissionsRoutes);
+app.use("/api/v1/menus", menusRoutes);
 
 app.use(errorHandler);
 
@@ -131,13 +133,11 @@ db.workflowType.hasMany(db.workflows);
 db.workflows.belongsTo(db.workflowType);
 
 
+db.menus.hasOne(db.permissions);
+db.permissions.belongsTo(db.menus);
 
-db.menus.hasMany(db.roleHasPermissions);
-db.roleHasPermissions.belongsTo(db.menus);
 
 
-db.permissions.hasMany(db.roleHasPermissions);
-db.roleHasPermissions.belongsTo(db.permissions);
 
 // db.workflowType.hasMany(db.workflows);
 // db.workflows.belongsTo(db.workflowType);
@@ -147,6 +147,9 @@ db.roleHasPermissions.belongsTo(db.permissions);
 
 // db.request.hasMany(db.workflow_templates)
 // db.workflow_templates.belongsTo(db.request)
+
+db.workflow_templates.hasMany(db.request)
+db.request.belongsTo(db.workflow_templates)
 
 db.sequelize
   .sync()

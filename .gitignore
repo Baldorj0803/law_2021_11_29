@@ -2,3 +2,4 @@ node_modules
 log
 public/files
 public/confirmFile
+public/form-templates

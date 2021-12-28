@@ -1,9 +1,7 @@
-
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { Op } = require("sequelize");
-
 
 exports.getUsers = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -17,22 +15,20 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
-  let query = {}
+  let query = {};
   if (req.query) {
-    let key = Object.keys(req.query)
-    let value = Object.values(req.query)
-    query.where = {}
+    let key = Object.keys(req.query);
+    let value = Object.values(req.query);
+    query.where = {};
     key.map((k, i) => {
-      query.where[k] = {}
-      query.where[k][Op.like] = `%${value[i]}%`
-    })
+      query.where[k] = {};
+      query.where[k][Op.like] = `%${value[i]}%`;
+    });
   }
 
   const pagination = await paginate(page, limit, req.db.users, query);
 
   query = { ...query, offset: pagination.start - 1, limit };
-
-
 
   if (select) {
     query.attributes = select;
@@ -47,7 +43,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
       ]);
   }
   //password талбарыг дамжуулахгүй
-  query["attributes"] = { exclude: ['password'] }
+  query["attributes"] = { exclude: ["password"] };
 
   const users = await req.db.users.findAll(query);
 
@@ -61,13 +57,13 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 
 //register
 exports.createUser = asyncHandler(async (req, res, next) => {
-  let user = await req.db.users.findOne({ where: { email: req.body.mobile } })
+  let user = await req.db.users.findOne({ where: { email: req.body.mobile } });
 
   if (user) {
     throw new Error("Утасны дугаар бүртгэгдсэн байна", 400);
   }
 
-  user = await req.db.users.findOne({ where: { email: req.body.email } })
+  user = await req.db.users.findOne({ where: { email: req.body.email } });
 
   if (user) {
     throw new Error("Имэйл бүртгэгдсэн байна", 400);
@@ -82,7 +78,6 @@ exports.createUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 //login
 exports.login = asyncHandler(async (req, res, next) => {
   //email password орж ирсэн эсэхийг шалгах
@@ -92,7 +87,10 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //Имэйл  хайх
-  let user = await req.db.users.findOne({ where: { mobile: req.body.mobile }, include: [{ model: req.db.roles }, { model: req.db.organizations }] })
+  let user = await req.db.users.findOne({
+    where: { mobile: req.body.mobile },
+    include: [{ model: req.db.roles }, { model: req.db.organizations }],
+  });
 
   if (!user) {
     throw new Error("Утасны дугаар нууц үг буруу байна", 401);
@@ -115,10 +113,9 @@ exports.login = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: user,
-    token
+    token,
   });
 });
-
 
 exports.updateUser = asyncHandler(async (req, res, next) => {
   let user = await req.db.users.findByPk(req.params.id);
@@ -126,6 +123,13 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
   if (!user) {
     throw new MyError(`${req.params.id} id тэй хэрэглэгч олдсонгүй.`, 400);
   }
+
+  // if (req.body.organizationId) {
+  //   let organization = await req.body.organizations.findByPk(
+  //     req.body.organizationId
+  //   );
+  //   req.body.roleId = organization.roleId;
+  // }
 
   user = await user.update(req.body);
 
@@ -136,10 +140,8 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 exports.updatePassword = asyncHandler(async (req, res, next) => {
-
-  let user = await req.db.users.findByPk(req.userId)
+  let user = await req.db.users.findByPk(req.userId);
 
   const ok = await user.checkPassword(req.body.password);
 
@@ -148,20 +150,18 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
   }
 
   let data = {
-    password: req.body.newPassword
-  }
-
+    password: req.body.newPassword,
+  };
 
   user = await user.update(data);
 
-  user.password=null;
+  user.password = null;
   res.status(200).json({
     code: res.statusCode,
     message: "success",
     data: user,
   });
 });
-
 
 exports.deleteUser = asyncHandler(async (req, res, next) => {
   let user = await req.db.users.findByPk(req.params.id);
@@ -179,18 +179,12 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-
-
-
-
-
 exports.getUser = asyncHandler(async (req, res, next) => {
   let user = await req.db.users.findByPk(req.params.id);
 
   if (!user) {
     throw new MyError(`${req.params.id} id тэй хэрэглэгч олдсонгүй.`, 400);
   }
-
 
   res.status(200).json({
     code: res.statusCode,

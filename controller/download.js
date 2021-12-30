@@ -46,15 +46,15 @@ exports.getConfirmFile = asyncHandler(async (req, res, next) => {
   if (!item.confirmFile || item.confirmFile === null)
     throw new MyError("Файл олдсонгүй");
 
-    res.download(process.env.FILE_PATH + `/files/${item.file}`, function (err) {
+  res.download(process.env.FILE_PATH + `/files/${item.file}`, function (err) {
     process.env.FILE_PATH + `/confirmFile/${item.confirmFile}`,
-    function (err) {
-      if (err) {
-        console.log(err);
-        res.status(404).end();
-      }
-    }
-  );
+      function (err) {
+        if (err) {
+          console.log(err);
+          res.status(404).end();
+        }
+      };
+  });
 });
 
 exports.approvedContractPdf = asyncHandler(async (req, res, next) => {

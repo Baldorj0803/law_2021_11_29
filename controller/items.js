@@ -249,15 +249,15 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
   };
   updatedReq = await request.update(requestBody);
 
-  if (removeFileName && removeFileName != "") {
-    fs.unlink(`./public/files/${removeFileName}`, (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
-    });
-  } else msg = "Устгах файл байхгүй байна";
+  // if (removeFileName && removeFileName != "") {
+  //   fs.unlink(`./public/files/${removeFileName}`, (err) => {
+  //     if (err) {
+  //       console.error(err);
+  //       return;
+  //     }
+  //     msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
+  //   });
+  // } else msg = "Устгах файл байхгүй байна";
 
   res.status(200).json({
     code: res.statusCode,

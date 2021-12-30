@@ -92,6 +92,10 @@ module.exports = function (sequelize, DataTypes) {
       confirmFile: {
         type: DataTypes.STRING,
       },
+      approvedFilePDF: {
+        type: DataTypes.STRING,
+        defaultValue: null,
+      },
       canceledUser: {
         type: DataTypes.BIGINT,
         references: {

@@ -6,7 +6,7 @@ const colors = require("colors");
 const errorHandler = require("./middleware/error");
 const morgan = require("morgan");
 const logger = require("./middleware/logger");
-const cors = require('cors')
+const cors = require("cors");
 const fileupload = require("express-fileupload");
 // Router оруулж ирэх
 const organizationLevelsRoutes = require("./routes/organization_levels");
@@ -24,11 +24,12 @@ const workflowTemplatesRoutes = require("./routes/workflow_templates");
 const itemsRoutes = require("./routes/items");
 const requestRoutes = require("./routes/request");
 const currenciesRoutes = require("./routes/currencies");
-const dashboardRoutes = require("./routes/dashboard")
-const downloadRoutes = require("./routes/download")
-const registrationRoutes = require("./routes/registrations")
-const roleHasPermissionsRoutes = require("./routes/roleHasPermissions")
-const menusRoutes = require("./routes/menus")
+const dashboardRoutes = require("./routes/dashboard");
+const downloadRoutes = require("./routes/download");
+const registrationRoutes = require("./routes/registrations");
+const roleHasPermissionsRoutes = require("./routes/roleHasPermissions");
+const menusRoutes = require("./routes/menus");
+const uploadRoutes = require("./routes/upload");
 
 const injectDb = require("./middleware/injectDb");
 
@@ -39,24 +40,27 @@ const db = require("./config/db-mysql");
 
 const app = express();
 
-var whitelist = [process.env.WHITELIST]
+var whitelist = [process.env.WHITELIST];
 var corsOptions = {
   origin: function (origin, callback) {
-    console.log(origin)
+    console.log(origin);
     if (whitelist.indexOf(origin) !== -1) {
-      callback(null, true)
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'))
+      callback(new Error("Not allowed by CORS"));
     }
-  }
-}
+  },
+};
 
 // Body parser
 app.use(express.json());
-app.use(fileupload({
-  createParentPath: true
-}));
-app.use(cors(corsOptions));
+app.use(
+  fileupload({
+    createParentPath: true,
+  })
+);
+app.use(cors());
+// app.use(cors(corsOptions));
 app.use("/static", express.static(path.join(__dirname, "public")));
 app.use(logger);
 app.use(injectDb(db));
@@ -81,12 +85,12 @@ app.use("/api/v1/download", downloadRoutes);
 app.use("/api/v1/registrations", registrationRoutes);
 app.use("/api/v1/roleHasPermissions", roleHasPermissionsRoutes);
 app.use("/api/v1/menus", menusRoutes);
+app.use("/api/v1/upload", uploadRoutes);
 
 app.use(errorHandler);
 
 // db.user.belongsToMany(db.book, { through: db.comment });
 // db.book.belongsToMany(db.user, { through: db.comment });
-
 
 // db.roles.belongsToMany(db.permissions, { through: db.role_has_permissions });
 // db.permissions.belongsToMany(db.roles, { through: db.role_has_permissions });
@@ -97,24 +101,23 @@ app.use(errorHandler);
 // db.roles.hasMany(db.role_has_permissions);
 // db.role_has_permissions.belongsTo(db.roles)
 
-db.roles.hasMany(db.users)
+db.roles.hasMany(db.users);
 db.users.belongsTo(db.roles);
 
-db.organizations.hasMany(db.users)
+db.organizations.hasMany(db.users);
 db.users.belongsTo(db.organizations);
 
-db.users.hasMany(db.form_templates)
+db.users.hasMany(db.form_templates);
 db.form_templates.belongsTo(db.users);
 
 db.req_status.hasMany(db.items);
-db.items.belongsTo(db.req_status)
+db.items.belongsTo(db.req_status);
 
 db.items.hasMany(db.request);
-db.request.belongsTo(db.items)
-
+db.request.belongsTo(db.items);
 
 db.req_status.hasMany(db.request);
-db.request.belongsTo(db.req_status)
+db.request.belongsTo(db.req_status);
 
 db.currencies.hasMany(db.workflows);
 db.workflows.belongsTo(db.currencies);
@@ -131,12 +134,8 @@ db.items.belongsTo(db.workflows);
 db.workflowType.hasMany(db.workflows);
 db.workflows.belongsTo(db.workflowType);
 
-
 db.menus.hasOne(db.permissions);
 db.permissions.belongsTo(db.menus);
-
-
-
 
 // db.workflowType.hasMany(db.workflows);
 // db.workflows.belongsTo(db.workflowType);
@@ -147,8 +146,8 @@ db.permissions.belongsTo(db.menus);
 // db.request.hasMany(db.workflow_templates)
 // db.workflow_templates.belongsTo(db.request)
 
-db.workflow_templates.hasMany(db.request)
-db.request.belongsTo(db.workflow_templates)
+db.workflow_templates.hasMany(db.request);
+db.request.belongsTo(db.workflow_templates);
 
 db.sequelize
   .sync()

@@ -7,20 +7,22 @@ const {
   deleteUser,
   updateUser,
   getUser,
-  getUsers,updatePassword
+  getUsers,
+  updatePassword,
+  updateIp,
 } = require("../controller/users");
 
 const router = express.Router();
 
 //"/api/v1/users"
 router.route("/login").post(login);
-router.use(protect)
-router.route("/update/password").post(authorize,updatePassword);
-router.route("/create").post(authorize,createUser);
-router.route('/').get(authorize,getUsers);
-router.route("/:id").get(authorize,getUser);
-router.route("/update/:id").post(authorize,updateUser);
-router.route("/delete/:id").post(authorize,deleteUser);
-
+router.use(protect);
+router.route("/update/password").post(updatePassword);
+router.route("/update/loginIp").post(updateIp);
+router.route("/create").post(authorize, createUser);
+router.route("/").get(authorize, getUsers);
+router.route("/:id").get(authorize, getUser);
+router.route("/update/:id").post(authorize, updateUser);
+router.route("/delete/:id").post(authorize, deleteUser);
 
 module.exports = router;

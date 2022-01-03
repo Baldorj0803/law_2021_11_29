@@ -2,6 +2,7 @@ const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { Op } = require("sequelize");
+const bcrypt = require("bcrypt");
 
 exports.getUsers = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -98,7 +99,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   //нууц үг шалгах
   const ok = await user.checkPassword(password);
-  // const ok = (password === user.password) ? true : false;
+  // const ok = password === user.password ? true : false;
 
   if (!ok) {
     throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
@@ -124,14 +125,11 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
     throw new MyError(`${req.params.id} id тэй хэрэглэгч олдсонгүй.`, 400);
   }
 
-  // if (req.body.organizationId) {
-  //   let organization = await req.body.organizations.findByPk(
-  //     req.body.organizationId
-  //   );
-  //   req.body.roleId = organization.roleId;
-  // }
-
+  if (req.body.password) {
+    req.body.password = await user.generatePassword(req.body.password);
+  }
   user = await user.update(req.body);
+  user.password = null;
 
   res.status(200).json({
     code: res.statusCode,
@@ -149,11 +147,12 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
     throw new Error("Хуучин нууц үг буруу байна", 401);
   }
 
-  let data = {
-    password: req.body.newPassword,
-  };
+  if (req.body.newPassword) {
+    req.body.password = await user.generatePassword(req.body.newPassword);
+  }
 
-  user = await user.update(data);
+  user = await user.update({ password: req.body.password });
+  user.password = null;
 
   user.password = null;
   res.status(200).json({
@@ -190,5 +189,23 @@ exports.getUser = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: user,
+  });
+});
+exports.updateIp = asyncHandler(async (req, res, next) => {
+  let user = await req.db.users.findByPk(req.userId);
+
+  if (!user) {
+    throw new MyError(`${req.params.id} id тэй хэрэглэгч олдсонгүй.`, 400);
+  }
+
+  const parseIp = (req) =>
+    req.headers["x-forwarded-for"]?.split(",").shift() ||
+    req.socket?.remoteAddress;
+
+  await user.update({ last_login_ip: parseIp(req) });
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
   });
 });

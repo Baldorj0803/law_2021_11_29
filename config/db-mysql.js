@@ -32,7 +32,6 @@ const models = [
   require("../models/company"),
   require("../models/req_status"),
   require("../models/organizations"),
-  require("../models/roleHasPermissions"),
   require("../models/workflows"),
   require("../models/user"),
   require("../models/workflow_templates"),
@@ -43,6 +42,8 @@ const models = [
   require("../models/workflowType"),
   require("../models/registrations"),
   require("../models/menus"),
+  require("../models/recieveUsers"),
+  require("../models/workfloawOrganizations"),
 ];
 
 models.forEach((model) => {

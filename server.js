@@ -27,7 +27,6 @@ const currenciesRoutes = require("./routes/currencies");
 const dashboardRoutes = require("./routes/dashboard");
 const downloadRoutes = require("./routes/download");
 const registrationRoutes = require("./routes/registrations");
-const roleHasPermissionsRoutes = require("./routes/roleHasPermissions");
 const menusRoutes = require("./routes/menus");
 const uploadRoutes = require("./routes/upload");
 
@@ -83,23 +82,10 @@ app.use("/api/v1/currencies", currenciesRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/download", downloadRoutes);
 app.use("/api/v1/registrations", registrationRoutes);
-app.use("/api/v1/roleHasPermissions", roleHasPermissionsRoutes);
 app.use("/api/v1/menus", menusRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 
 app.use(errorHandler);
-
-// db.user.belongsToMany(db.book, { through: db.comment });
-// db.book.belongsToMany(db.user, { through: db.comment });
-
-// db.roles.belongsToMany(db.permissions, { through: db.role_has_permissions });
-// db.permissions.belongsToMany(db.roles, { through: db.role_has_permissions });
-
-// db.permissions.hasMany(db.role_has_permissions);
-// db.role_has_permissions.belongsTo(db.permissions);
-
-// db.roles.hasMany(db.role_has_permissions);
-// db.role_has_permissions.belongsTo(db.roles)
 
 db.roles.hasMany(db.users);
 db.users.belongsTo(db.roles);
@@ -137,21 +123,30 @@ db.workflows.belongsTo(db.workflowType);
 db.menus.hasOne(db.permissions);
 db.permissions.belongsTo(db.menus);
 
-// db.workflowType.hasMany(db.workflows);
-// db.workflows.belongsTo(db.workflowType);
-
-// db.users.hasMany(db.request);
-// db.request.belongsTo(db.users);
-
-// db.request.hasMany(db.workflow_templates)
-// db.workflow_templates.belongsTo(db.request)
-
 db.workflow_templates.hasMany(db.request);
 db.request.belongsTo(db.workflow_templates);
 
+db.recieveUsers.belongsTo(db.request);
+db.request.hasMany(db.recieveUsers);
+db.recieveUsers.belongsTo(db.users);
+db.request.hasMany(db.recieveUsers);
+
+db.workflowOrganizations.belongsTo(db.organizations);
+db.organizations.hasMany(db.workflowOrganizations);
+db.workflowOrganizations.belongsTo(db.workflow_templates);
+db.workflow_templates.hasMany(db.workflowOrganizations);
+
+app.get("/test", async (req, res, next) => {
+  let data = await req.db.workflow_templates.findByPk(1);
+  res.send({
+    magic: Object.keys(req.db.workflow_templates.prototype),
+    // data: await data.getWorkflowOrganizations(),
+    data: await data.countWorkflowOrganizations(),
+  });
+});
 db.sequelize
   .sync()
-  // .sync({force:true})
+  // .sync({ force: true })
   .then((result) => {
     console.log("sync hiigdlee...");
   })

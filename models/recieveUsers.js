@@ -28,6 +28,14 @@ module.exports = function (sequelize, DataTypes) {
       },
     },
     {
+      indexes: [
+        {
+          unique: true,
+          fields: ['requestId', 'userId']
+        }
+      ]
+    },
+    {
       tableName: "recieveUsers",
       timestamps: false,
     }

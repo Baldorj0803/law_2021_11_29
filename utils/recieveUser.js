@@ -1,7 +1,7 @@
-const { createUser } = require("../controller/users");
 const asyncHandler = require("../middleware/asyncHandle");
 const MyError = require("../utils/myError");
 const color = require("colors");
+const { Op } = require("sequelize");
 
 exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
   const itemCreatedUser = await req.db.users.findByPk(item.userId);
@@ -38,33 +38,37 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
 
       let orgCnt = await checkWorkflowTemplate.countWorkflowOrganizations();
       if (checkWorkflowTemplate.roleId && orgCnt > 0) {
+        let orgs = await checkWorkflowTemplate.getWorkflowOrganizations(
+          {
+            attributes: ['organizationId'],
+            raw: true
+          }
+        )
+
+        let orgIds = orgs.map(i => i.organizationId);
+        // let a = await checkWorkflowTemplate.getWorkflowOrganizations({
+        //   attributes: ['foo']
+        // });
         //org зааж өгсөн бол заавал дамжина
         // workflow_template = checkWorkflowTemplate
         console.log(
           `орг зааж өгсөн тул ${checkWorkflowTemplate.step} алхамд шууд дамжлаа`
             .bgMagenta
         );
-        let q = `select * 
-                    from request r
-                    left join users u on r.recieveUser=u.id
-                    where itemId=${item.id}  and r.recieveUser is not null and  u.organizationId=${checkWorkflowTemplate.organizationId}`;
+
+        let q = `select count(*) as user
+        from recieveusers ru
+        left join users u on ru.userId=u.id
+        left join request r on ru.requestId=r.id
+        where itemId=${item.id} and  u.organizationId in (${orgIds}) 
+        and u.id is not null and r.id is not null`;
         const [uResult, uMeta] = await req.db.sequelize.query(q);
-        if (uResult.length === 0) {
+        if (uResult[0].user === 0) {
           workflow_template = checkWorkflowTemplate;
           break;
         }
         console.log(
           `Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan
-        );
-      } else if (
-        checkWorkflowTemplate.roleId >= createUser.roleId &&
-        orgCnt === 0
-      ) {
-        console.log(
-          `${step} алхам дээр надаас бага рольтой ерөнхйигөөр заагдсан тул алгаслаа`
-        );
-        console.log(
-          "Ерөнхийгөөр заагдсан, надаас бага/ижил/ рольтой тул дараагийн алхамыг шалгах"
         );
       } else if (checkWorkflowTemplate.roleId && orgCnt === 0) {
         //ерөнхийгөөр зааж өгсөн
@@ -89,10 +93,11 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 checkWorkflowTemplate,
                 item
               );
-              let isDuplicate = await req.db.request.findOne({
+
+              let isDuplicate = await req.db.request.findAll({
                 where: {
                   itemId: item.id,
-                  recieveUser: user,
+                  recieveUser: { [Op.notIn]: user },
                 },
               });
               if (!isDuplicate) {
@@ -112,7 +117,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           }
         } else {
           console.log(
-            `Шалгах роль /${checkWorkflowTemplate.roleId}/  нь үүсгэсэн хэрэглэгчийн роль ${itemCreatedUser.roleId} оос бага тул алгаслаа `
+            `Шалгах роль /${checkWorkflowTemplate.roleId}/  нь үүсгэсэн хэрэглэгчийн роль/ ${itemCreatedUser.roleId}/ оос бага тул алгаслаа `
               .red
           );
         }
@@ -143,46 +148,41 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
   const itemCreatedUser = await req.db.users.findByPk(item.userId);
 
   if (!itemCreatedUser)
-    throw new MyError(`Энэхүү файлыг үүсгэсэн хэрэглсэг байхгүй байна`);
+    throw new MyError(`Энэхүү файлыг үүсгэсэн хэрэглсэгч байхгүй байна`);
 
   // !!! read me
   // өндөр роль 0 , бага 10... гэж тооцоологдоно
 
-  let userId;
+  let orgCnt = await workflow_template.countWorkflowOrganizations();
+  let userId = [];
   // ---------------Орг байвал 1 хүн байна
   // ---------------Орг байхгүй бол олон хүн байна
   if (
     workflow_template &&
-    workflow_template.organizationId &&
-    workflow_template.organizationId !== null
+    // workflow_template.organizationId &&
+    // workflow_template.organizationId !== null
+    orgCnt > 0
   ) {
     //Нэг org байна /Тэр газрын захирал/
+    let orgs = await workflow_template.getWorkflowOrganizations(
+      {
+        attributes: ['organizationId'],
+        raw: true
+      }
+    )
+
+    let orgIds = orgs.map(i => i.organizationId);
     let recieveUser = await req.db.users.findAll({
       where: {
-        organizationId: workflow_template.organizationId,
+        organizationId: orgIds,
       },
+      raw: true
     });
 
     if (recieveUser.length === 0) {
       throw new MyError(`Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`, 400);
     }
-    if (recieveUser.length[1]) {
-      // throw new MyError(
-      //     `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
-      //     400
-      // );
-
-      //Тухайн алба дээр 1 ээс олон хүн байгаа бөгөөд аль салбарт хамаарайлтай хүмүүсээс хайна
-      let u = recieveUser.filter((u) => u.branchId);
-      if (!u)
-        throw new MyError(
-          `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
-          400
-        );
-
-      //users ээс аль вальют сонгосноор хайх
-    }
-    userId = recieveUser[0].id;
+    userId = recieveUser.map(i => i.id);
   } else {
     console.log(workflow_template.roleId + " роль хүртэл давтах");
     console.log(itemCreatedUser.roleId + " миний роль");
@@ -212,12 +212,12 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
             400
           );
         }
-        userId = recieveUser[0].id;
+        userId.push(recieveUser[0].id)
         break;
       }
       currentOrg = parent.id;
     }
-    if (!userId) {
+    if (!userId.length === 0) {
       throw new MyError(`Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`, 400);
     }
   }

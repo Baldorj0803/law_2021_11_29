@@ -29,7 +29,7 @@ module.exports = function (sequelize, DataTypes) {
     },
     {
       tableName: "workflowOrganizations",
-      timestamps: false,
+      timestamps: true,
     }
   );
   return workflowOrganizations;

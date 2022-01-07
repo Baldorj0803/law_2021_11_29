@@ -4,6 +4,10 @@ const color = require("colors");
 const { Op } = require("sequelize");
 
 exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
+  let returnObj = {
+    workflowTemplateId: null,
+    userIds: null
+  }
   const itemCreatedUser = await req.db.users.findByPk(item.userId);
 
   if (!itemCreatedUser)
@@ -46,9 +50,6 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
         )
 
         let orgIds = orgs.map(i => i.organizationId);
-        // let a = await checkWorkflowTemplate.getWorkflowOrganizations({
-        //   attributes: ['foo']
-        // });
         //org зааж өгсөн бол заавал дамжина
         // workflow_template = checkWorkflowTemplate
         console.log(
@@ -86,27 +87,43 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
             checkedOrg.parent_id !== 0
           ) {
             console.log(checkedOrg.id + ":Дээр шалгалаа");
-            console.log(checkedOrg.roleId + "+" + checkWorkflowTemplate.roleId);
+            console.log(checkedOrg.roleId + "===" + checkWorkflowTemplate.roleId);
             if (checkedOrg.roleId === checkWorkflowTemplate.roleId) {
+              //тухайн тэмплэйт дээрээс хүлээн авах хэрэглэгчийг олох
+              console.log(`${checkWorkflowTemplate.id} id-тай тэмплэйтээс хүлээн авах хэрэглэгчийг олно`.yellow);
               let user = await this.recieveUser(
                 req,
                 checkWorkflowTemplate,
                 item
               );
-
-              let isDuplicate = await req.db.request.findAll({
+              let isDuplicate = await req.db.recieveUsers.findAll({
+                attributes: ['userId'],
                 where: {
-                  itemId: item.id,
-                  recieveUser: { [Op.notIn]: user },
+                  userId: { [Op.in]: user }
                 },
+                include: {
+                  model: req.db.request,
+                  where: { itemId: item.id }
+                },
+                raw: true
               });
-              if (!isDuplicate) {
+
+              isDuplicate = isDuplicate.map(i => i['userId']);
+
+              if (isDuplicate.length > 0) {
+                console.log(`${JSON.stringify(isDuplicate)} хэрэглэгч дээр ${item.id} id-тай гэрээний хүсэлт ирж байсан тул ${checkWorkflowTemplate.id} id-тай тэмплэйт дээр хүлээн авах хэрэглэгчээс хаслаа.`.yellow);
+              }
+              let realRecieveUser = user.filter(x => !isDuplicate.includes(x));
+              console.log(`realRecieveUser:${realRecieveUser}`.magenta);
+              if (realRecieveUser.length > 0) {
                 workflow_template = checkWorkflowTemplate;
+                returnObj.userIds = realRecieveUser;
                 break;
               } else
                 console.log(
                   `Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red
                 );
+              console.log(returnObj);
               break;
             } else {
               checkedOrg = await req.db.organizations.findByPk(
@@ -141,7 +158,10 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
     `Дараагийн шат-${workflow_template.id}, ${workflow_template.organizationId} - албан тушаалд`
       .green
   );
-  return workflow_template.id;
+
+
+  returnObj.workflowTemplateId = workflow_template.id
+  return returnObj;
 });
 
 exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
@@ -184,8 +204,8 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
     }
     userId = recieveUser.map(i => i.id);
   } else {
-    console.log(workflow_template.roleId + " роль хүртэл давтах");
     console.log(itemCreatedUser.roleId + " миний роль");
+    console.log(workflow_template.roleId + " роль хүртэл давтах");
     let currentOrg = itemCreatedUser.organizationId;
     for (
       let index = itemCreatedUser.roleId + 1;
@@ -196,23 +216,19 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       let parent = await req.db.organizations.findByPk(
         myOrganization.parent_id
       );
+      console.log(`${parent.roleId}`.bgMagenta);
       if (parent.roleId === workflow_template.roleId) {
         let recieveUser = await req.db.users.findAll({
           where: {
             organizationId: parent.id,
           },
+          raw: true
         });
         if (recieveUser.length === 0) {
           throw new MyError(`Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`, 400);
         }
 
-        if (recieveUser[1]) {
-          throw new MyError(
-            `${workflow_template.organizationId} алба нэгж дээр 1 ээс олон хүн бүртгэгдсэн тул хүлээн авах хүн сонгох боломжгүй байна`,
-            400
-          );
-        }
-        userId.push(recieveUser[0].id)
+        userId = recieveUser.map(i => i.id);
         break;
       }
       currentOrg = parent.id;

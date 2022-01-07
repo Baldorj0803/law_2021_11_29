@@ -15,6 +15,9 @@ module.exports = function (sequelize, DataTypes) {
       file: {
         type: DataTypes.STRING,
       },
+      subFile: {
+        type: DataTypes.STRING,
+      },
       company: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,

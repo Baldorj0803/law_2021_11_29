@@ -143,8 +143,8 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 
   //хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
   let new_request = {};
-  let useTemplateId = await getWorkflowTemplate(req, newitem, 1);
-  if (useTemplateId === 0) {
+  let obj = await getWorkflowTemplate(req, newitem, 1);
+  if (obj === 0) {
     newitem.typeId = variable.PENDING;
     await newitem.save();
     res.status(200).json({
@@ -155,13 +155,32 @@ exports.createitem = asyncHandler(async (req, res, next) => {
       },
     });
   }
-  new_request.workflowTemplateId = useTemplateId;
-  (new_request.itemId = newitem.id),
-    (new_request.reqStatusId = variable.PENDING);
-  let useTemplate = await req.db.workflow_templates.findByPk(useTemplateId);
-  if (new_request.workflowTemplateId)
-    new_request.recieveUser = await recieveUser(req, useTemplate, newitem);
+  new_request.workflowTemplateId = obj.workflowTemplateId;
+  new_request.itemId = newitem.id;
+  new_request.reqStatusId = variable.PENDING;
+
+  let new_recieveUsers = [];
+  let recieveusers;
+  if (!obj.userIds) {
+    let useTemplate = await req.db.workflow_templates.findByPk(obj.workflowTemplateId);
+    if (new_request.workflowTemplateId)
+      recieveusers = await recieveUser(req, useTemplate, newitem);
+    //Хүлээн авах хэрэглэгчидээр recieveUsers үүсгэх
+  } else recieveusers = obj.userIds;
+
   new_request = await req.db.request.create(new_request);
+
+  recieveusers.map(i => {
+    new_recieveUsers.push({
+      requestId: new_request.id,
+      userId: i
+    })
+  })
+
+  console.log(new_recieveUsers);
+  new_recieveUsers = await req.db.recieveUsers.bulkCreate(new_recieveUsers);
+
+
   msg = msg + "Хүсэлт дараагийн шатанд амжилттай илгээгдлээ";
   newitem.reqStatusId = variable.PENDING;
   await newitem.save();
@@ -172,6 +191,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
     data: {
       newitem,
       new_request,
+      new_recieveUsers
     },
   });
 });

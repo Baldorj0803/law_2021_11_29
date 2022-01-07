@@ -38,7 +38,6 @@ const models = [
   require("../models/items"),
   require("../models/request"),
   require("../models/currencies"),
-  require("../models/branch"),
   require("../models/workflowType"),
   require("../models/registrations"),
   require("../models/menus"),

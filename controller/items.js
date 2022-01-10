@@ -265,14 +265,14 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
 
   //Шинээр дараагийн хүсэлт бэлдэх
   // id, modifiedBy, workflowTemplateId, itemId, reqStatusId,
-  // recieveUser, suggestion, uploadFileName, createdAt, updatedAt
-  let removeFileName = request.uploadFileName;
+  // recieveUser, suggestion, subFile, createdAt, updatedAt
+  let removeFileName = request.file;
 
   let requestBody = {
     modifiedBy: null,
     reqStatusId: variable.PENDING,
     suggestion: null,
-    uploadFileName: null,
+    file: null,
   };
   updatedReq = await request.update(requestBody);
 

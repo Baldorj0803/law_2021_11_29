@@ -150,3 +150,44 @@ exports.getContractIConfirm = asyncHandler(async (req, res, next) => {
     }
   );
 });
+exports.getSubFileIConfirm = asyncHandler(async (req, res, next) => {
+  if (!req.params.itemId || !req.params.fileName) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let check = await req.db.request.findOne({
+    where: {
+      itemId: req.params.itemId,
+    },
+    include: {
+      model: req.db.recieveUsers,
+      where: { userId: req.userId }
+    }
+  });
+  if (!check)
+    throw new MyError(
+      "Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна"
+    );
+  let item = await req.db.items.findOne({
+    where: {
+      id: req.params.itemId,
+      subFile: req.params.fileName,
+    },
+  });
+  if (!item) {
+    throw new MyError(
+      `${req.params.fileName} файлыг татах боломжгүй байна`,
+      400
+    );
+  }
+
+  res.download(
+    process.env.FILE_PATH + `/files/${req.params.fileName}`,
+    function (err) {
+      if (err) {
+        console.log(err);
+        res.status(404).end();
+      }
+    }
+  );
+});

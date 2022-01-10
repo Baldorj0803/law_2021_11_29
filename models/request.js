@@ -42,7 +42,10 @@ module.exports = function (sequelize, DataTypes) {
       suggestion: {
         type: DataTypes.TEXT,
       },
-      uploadFileName: {
+      file: {
+        type: DataTypes.STRING,
+      },
+      subFile: {
         type: DataTypes.STRING,
       },
     },

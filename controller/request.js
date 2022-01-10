@@ -77,7 +77,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
 
   if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
 
-  let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
+  let query = `select r.id, c.name as company,i.name as gereeNer,i.subFile,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
   u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId
   from recieveusers ru
   left join request r on ru.requestId=r.id
@@ -235,10 +235,10 @@ const createNextReqApproved = asyncHandler(async (item, request, body, itemStatu
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
   let file = null, msg = "", data = {}, status, wt;
-  if (req.files && req.files.uploadFileName) {
-    file = await checkFile(req.files.uploadFileName);
-    req.body.uploadFileName = file.name;
-  } else req.body.uploadFileName = null;
+  if (req.files && req.files.file) {
+    file = await checkFile(req.files.file);
+    req.body.file = file.name;
+  } else req.body.file = null;
 
 
   req.body.modifiedBy = req.userId;
@@ -275,8 +275,8 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
   let item = await req.db.items.findByPk(request.itemId);
 
-  console.log(`req.body.uploadFileName: ${req.body.uploadFileName}`.bgBlue);
-  if (req.files && req.body.uploadFileName) item.file = req.body.uploadFileName;
+  console.log(`req.body.file: ${req.body.file}`.bgBlue);
+  if (req.files && req.body.file) item.file = req.body.file;
   console.log(`item.file: ${item.file}`.bgBlue);
 
   if (!item) throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
@@ -425,7 +425,7 @@ exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
 exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) => {
 
 
-  if (!req.params.requestId || !req.params.uploadFileName || !req.params.itemId) {
+  if (!req.params.requestId || !req.params.file || !req.params.itemId) {
     throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
   }
 
@@ -433,13 +433,13 @@ exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) 
     where: {
       itemId: req.params.itemId,
       id: req.params.requestId,
-      uploadFileName: req.params.uploadFileName,
+      file: req.params.file,
     }
   })
   if (!request) {
-    throw new MyError(`${req.params.uploadFileName} файлыг татах боломжгүй байна`, 400)
+    throw new MyError(`${req.params.file} файлыг татах боломжгүй байна`, 400)
   }
-  res.download(process.env.FILE_PATH + `/files/${req.params.uploadFileName}`, function (err) {
+  res.download(process.env.FILE_PATH + `/files/${req.params.file}`, function (err) {
     if (err) {
       console.log(err);
       res.status(404).end()

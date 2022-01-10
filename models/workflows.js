@@ -52,6 +52,10 @@ module.exports = function (sequelize, DataTypes) {
                 key: "id",
             },
         },
+        confirmTemplateFileName: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
     },
         {
             indexes: [

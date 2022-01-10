@@ -18,7 +18,7 @@ module.exports = asyncHandler(async (req, itemId) => {
     const user = await req.db.users.findByPk(item.userId);
     if (!user) throw new MyError("Хэрэглэгч олдсонгүй", 400)
 
-    let query = `select u.organizationId,wt.roleId,u.name,wt.step,wt.workflowId,w.workflowTypeId,tt.id as templateOrgId
+    let query = `select u.organizationId,wt.roleId,u.name,wt.step,wt.workflowId,w.workflowTypeId,tt.id as templateOrgId,w.confirmTemplateFileName
     from request r
     left join users u on r.modifiedBy=u.id
     left join workflow_templates wt on r.workflowTemplateId=wt.id
@@ -30,21 +30,33 @@ module.exports = asyncHandler(async (req, itemId) => {
     where r.reqStatusId =${variable.COMPLETED} and r.itemId=${item.id}
     order by wt.step asc ;`
 
+    let query2 = `select i.id,w.workflowTypeId,count(wt.id) as totalStep
+    from items i
+    left join workflows w on i.workflowId = w.id
+    left join workflow_templates wt on w.id = wt.workflowId
+    where i.id=${item.id}`;
 
-    const [uResult, uMeta] = await req.db.sequelize.query(query);
-
+    const [uResult2, uMeta2] = await req.db.sequelize.query(query2);
+    let confirmTemplateFileName = (item.company === 1) ? 'gobi' : 'ohin';
+    confirmTemplateFileName = confirmTemplateFileName + uResult2[0].totalStep + '.docx'
     let content;
-    if (item.company === 1) {
+    if (uResult2[0].workflowTypeId === 2) {
         content = fs.readFileSync(
-            path.resolve(process.env.FILE_PATH + "/confirmTemplate/", "gobi.docx"),
+            path.resolve(process.env.FILE_PATH + "/confirmTemplate/", "songon.docx"),
+            "binary"
+        );
+    } else if (item.company === 1) {
+        content = fs.readFileSync(
+            path.resolve(process.env.FILE_PATH + "/confirmTemplate/", confirmTemplateFileName),
             "binary"
         );
     } else {
         content = fs.readFileSync(
-            path.resolve(process.env.FILE_PATH + "/confirmTemplate/", "gobiOhin.docx"),
+            path.resolve(process.env.FILE_PATH + "/confirmTemplate/", confirmTemplateFileName),
             "binary"
         );
     }
+    const [uResult, uMeta] = await req.db.sequelize.query(query);
 
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
@@ -57,7 +69,7 @@ module.exports = asyncHandler(async (req, itemId) => {
     let sanhvv = uResult.filter(i => i.organizationId === 12);
     let huuli = uResult.filter(i => i.organizationId === 16 || i.organizationId === 110);
     let ded = uResult.filter(i => (i.templateOrgId === null && i.roleId === 2));
-    let gazriin = uResult.filter(i => (i.templateOrgId === null && i.roleId === 3));
+    let gazriin = uResult.filter(i => (i.templateOrgId === null && i.roleId === 3 && i.step == 2));
     let ccx = uResult.filter(i => (i.organizationId === 4));
     let ohin = uResult.filter(i => (i.organizationId === 7 || i.organizationId === 6 || i.organizationId === 5));
     let songon = uResult.filter(i => (i.workflowTypeId === 2));
@@ -76,7 +88,6 @@ module.exports = asyncHandler(async (req, itemId) => {
 
     if (item.company === 1) {
         doc.render({
-            test: "ene bol test",
             towchUtga: item.brfMean,
             custInf: item.custInfo,
             ajliinHuls: item.wage,
@@ -118,7 +129,7 @@ module.exports = asyncHandler(async (req, itemId) => {
 
     const buf = doc.getZip().generate({ type: "nodebuffer" });
 
-    let fileName = `file_${Date.now()}.docx`;
+    let fileName = `zowshoorliin_huudas_${Date.now()}.docx`;
 
     let fileContents = Buffer.from(buf, "base64");
     let savedFilePath = process.env.FILE_PATH + "/confirmFile/" + fileName;

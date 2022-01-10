@@ -6,6 +6,7 @@ const { saveFIle } = require("../utils/saveFile");
 const variable = require("../config/const");
 const fs = require("fs");
 const { request } = require("express");
+const { Op } = require('sequelize')
 
 exports.getitems = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -77,11 +78,6 @@ exports.myItems = asyncHandler(async (req, res, next) => {
     {
       model: req.db.request,
       order: [["createdAt", "DESC"]],
-      // include:[
-      // 	{
-      // 		model:req.db.req_status
-      // 	}
-      // ]
     },
   ];
   query.where = { userId: req.userId };
@@ -96,8 +92,12 @@ exports.myItems = asyncHandler(async (req, res, next) => {
             model: req.db.req_status,
           },
           {
-            model: req.db.workflow_templates,
-          },
+            model: req.db.recieveUsers,
+            include: {
+              model: req.db.users,
+              include: { model: req.db.organizations }
+            }
+          }
         ],
       },
     ],
@@ -127,12 +127,13 @@ exports.getItem = asyncHandler(async (req, res, next) => {
 
 exports.createitem = asyncHandler(async (req, res, next) => {
   let msg;
-  if (!req.files) {
+  if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
+  req.body.file = await saveFIle(req.files.file, "files");
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files");
 
-  req.body.file = await saveFIle(req.files.file, req.body.file, "files");
-
+  req.body.firstFile = req.body.file;
   req.body.userId = req.userId;
   req.body.typeId = variable.DRAFT;
   req.body.workflowId = parseInt(req.body.workflowId);
@@ -214,8 +215,7 @@ exports.sendReq = asyncHandler(async (req, res, next) => {
 //Цуцлагдсан хүсэлтийг дахин илгээхэд ашиглагдана
 exports.updateitem = asyncHandler(async (req, res, next) => {
   let msg = "";
-
-  if (!req.files) {
+  if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
 
@@ -223,12 +223,14 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     where: {
       id: req.params.itemId,
       userId: req.userId,
+      reqStatusId: variable.CANCELED
     },
   });
   let request = await req.db.request.findOne({
     where: {
       id: req.params.requestId,
       reqStatusId: variable.CANCELED,
+      modifiedBy: { [Op.ne]: null }
     },
   });
 
@@ -238,8 +240,12 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
   if (!request)
     throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
 
-  req.body.file = await saveFIle(req.files.file, req.body.file, "files");
+  req.body.file = await saveFIle(req.files.file, "files");
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files");
+
+  req.body.firstFile = req.body.file;
   req.body.reqStatusId = variable.PENDING;
+  req.body.canceledUser = null;
   console.log("Шинэ файл:", req.body.file);
   let removeItemFile = item.file;
 
@@ -249,6 +255,7 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     console.log("Өмнөх файл:", removeItemFile);
     fs.unlink(`./public/files/${removeItemFile}`, (err) => {
       if (err) {
+        msg = ", Цуцалсан хүсэлтийн файл олдсонгүй";
         console.error(err);
         return;
       }
@@ -335,46 +342,9 @@ exports.downloadMyItemFile = asyncHandler(async (req, res, next) => {
   );
 });
 
-exports.downloadItemFile = asyncHandler(async (req, res, next) => {
-  if (!req.params.itemId || !req.params.fileName) {
-    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
-  }
 
-  let check = await req.db.request.findOne({
-    where: {
-      recieveUser: req.userId,
-      itemId: req.params.itemId,
-    },
-  });
-  if (!check)
-    throw new MyError(
-      "Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна"
-    );
-  let item = await req.db.items.findOne({
-    where: {
-      id: req.params.itemId,
-      file: req.params.fileName,
-    },
-  });
-  if (!item) {
-    throw new MyError(
-      `${req.params.fileName} файлыг татах боломжгүй байна`,
-      400
-    );
-  }
 
-  res.download(
-    process.env.FILE_PATH + `/files/${req.params.fileName}`,
-    function (err) {
-      if (err) {
-        console.log(err);
-        res.status(404).end();
-      }
-    }
-  );
-});
-
-exports.getItemByRequest = asyncHandler(async (req, res, next) => {
+exports.getMyItemByRequest = asyncHandler(async (req, res, next) => {
   let request = await req.db.request.findByPk(req.params.requestId);
 
   if (!request) {

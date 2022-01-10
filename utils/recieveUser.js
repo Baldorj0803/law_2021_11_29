@@ -25,10 +25,9 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
   });
   console.log(`${lastTemplate.step} дамжлагын сүүлийн алхам`);
   console.log(`${step} алхамын утгуудыг олох`);
-  if (!lastTemplate)
-    throw new MyError(
-      `${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`
-    );
+  if (!lastTemplate) throw new MyError(
+    `${item.workflowId} id тай дамжлага дээр сүүлийн дамжлага тохируулаагүй байна`
+  );
   if (lastTemplate.step >= step) {
     for (let index = step; index <= lastTemplate.step; index++) {
       console.log(`${index} алхам дээр шалгалт хийлээ`.blue);

@@ -29,13 +29,12 @@ exports.totalStat = asyncHandler(async (req, res, next) => {
 exports.getRequestProcess = asyncHandler(async (req, res, next) => {
 
     let query = `select o.name,count(u.organizationId) as total
-    from (select * from request
-    where reqStatusId=2) as r
-    left join users u on r.recieveUser=u.id
+    from (select * from request where reqStatusId=${variable.PENDING} and modifiedBy is null) as r
+    left join recieveusers ru on r.id = ru.requestId
+    left join users u on ru.userId = u.id
     left join organizations o on u.organizationId = o.id
-    where r.reqStatusId=${variable.PENDING}
     group by o.id
-    order by o.id asc`;
+    order by o.id asc;`;
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 
 
@@ -56,7 +55,8 @@ exports.getItemDetail = asyncHandler(async (req, res, next) => {
     from items i
     left join users u on i.userId=u.id
     left join organizations o on u.organizationId=o.id
-    left join req_status rs on i.reqStatusId=rs.id`
+    left join req_status rs on i.reqStatusId=rs.id
+    where rs.id not in (${variable.CANCELED},${variable.DRAFT})`
 
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 

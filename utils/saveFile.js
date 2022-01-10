@@ -4,8 +4,7 @@ const MyError = require("../utils/myError")
 const path = require('path')
 
 
-exports.saveFIle = asyncHandler(async (file, fileName, folderName) => {
-
+exports.saveFIle = asyncHandler(async (file, folderName) => {
 	if (
 		!file.mimetype.endsWith("application/octet-stream") &&
 		!file.mimetype.endsWith("document") &&
@@ -30,16 +29,14 @@ exports.saveFIle = asyncHandler(async (file, fileName, folderName) => {
 			}
 		}
 	}
-
-	fileName = `file_${Date.now()}${path.parse(file.name).ext}`;
-	file.name = fileName;
+	file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
 
 	file.mv(`./public/${folderName}/${file.name}`, (err) => {
 		if (err) {
 			throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
 		}
 	});
-	return fileName;
+	return file.name;
 })
 
 

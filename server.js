@@ -38,6 +38,7 @@ dotenv.config({ path: "./config/config.env" });
 const db = require("./config/db-mysql");
 const { recieveUser } = require("./utils/recieveUser");
 const asyncHandler = require("./middleware/asyncHandle");
+const generateConfirmFile = require("./utils/generateConfirmFile");
 
 const app = express();
 
@@ -122,6 +123,12 @@ db.items.belongsTo(db.workflows);
 db.workflowType.hasMany(db.workflows);
 db.workflows.belongsTo(db.workflowType);
 
+db.workflows.hasMany(db.workflow_templates);
+db.workflow_templates.belongsTo(db.workflows);
+
+db.roles.hasMany(db.workflow_templates);
+db.workflow_templates.belongsTo(db.roles);
+
 db.menus.hasOne(db.permissions);
 db.permissions.belongsTo(db.menus);
 
@@ -135,21 +142,14 @@ db.request.hasMany(db.recieveUsers);
 
 db.workflowOrganizations.belongsTo(db.organizations);
 db.organizations.hasMany(db.workflowOrganizations);
+
 db.workflowOrganizations.belongsTo(db.workflow_templates);
 db.workflow_templates.hasMany(db.workflowOrganizations);
 
 app.get("/test", asyncHandler(async (req, res, next) => {
-  // let data = await req.db.workflow_templates.findByPk(1);
-  // res.send({
-  //   magic: Object.keys(req.db.workflow_templates.prototype),
-  //   // data: await data.getWorkflowOrganizations(),
-  //   data: await data.countWorkflowOrganizations(),
-  // });
-  let w = await req.db.workflow_templates.findByPk(1);
-  let i = await req.db.items.findByPk(7);
-  let ret = await recieveUser(req, w, i);
-  res.send({
-    ret
+  let c = await generateConfirmFile(req, 10);
+  res.status(200).json({
+    data: c
   })
 }));
 db.sequelize

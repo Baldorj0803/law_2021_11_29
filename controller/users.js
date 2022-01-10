@@ -98,12 +98,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //нууц үг шалгах
-  // const ok = await user.checkPassword(password);
+  const ok = await user.checkPassword(password);
   // const ok = password === user.password ? true : false;
 
-  // if (!ok) {
-  //   throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
-  // }
+  if (!ok) {
+    throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
+  }
 
   /* !!! token авсны дараа role ийг null болгох  */
   let token = user.getJsonWebToken();

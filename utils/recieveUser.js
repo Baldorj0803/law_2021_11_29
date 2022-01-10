@@ -236,6 +236,7 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       throw new MyError(`Хүсэлтийг хүлээн авах хэрэглэгч олдсонгүй`, 400);
     }
   }
+  userId = userId.filter(i => i !== itemCreatedUser.id);
   console.log(`Хүлээн авах хэрэглэгч: ${userId}`.green);
   return userId;
 });

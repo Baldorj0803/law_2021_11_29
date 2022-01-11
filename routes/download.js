@@ -6,7 +6,9 @@ const {
   getConfirmFile,
   getMyConfirmFile,
   getContractIConfirm,
-  getSubFileIConfirm
+  getSubFileIConfirm,
+  downloadMyItemRequestFile,
+  downloadMyItemRequestSubFile
 } = require("../controller/download");
 const { authorize } = require("../middleware/protect");
 
@@ -20,6 +22,10 @@ router.route("/myConfirm/:itemId").get(authorize, getMyConfirmFile);
 //Батлагдсан гэрээг татах
 router.route("/confirm/:itemId").get(authorize, getConfirmFile);
 //Гэрээний хүсэлтэд засвар баталсан/цуцалсан/ хүн тухайн гэрээг татах
+
+//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг файлаар татах
+router.route('/items/:itemId/request/:requestId/file/:file').get(authorize, downloadMyItemRequestFile);
+router.route('/items/:itemId/request/:requestId/subFile/:file').get(authorize, downloadMyItemRequestSubFile);
 router.route('/items/:itemId/:fileName').get(authorize, getContractIConfirm);
 //Гэрээний хүсэлтэд засвар баталсан/цуцалсан/ хүн тухайн гэрээг татах
 router.route('/items/:itemId/subFile/:fileName').get(authorize, getSubFileIConfirm);

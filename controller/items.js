@@ -99,7 +99,9 @@ exports.myItems = asyncHandler(async (req, res, next) => {
             }
           }
         ],
+        order: [["createdAt", "DESC"]],
       },
+
     ],
     order: [["createdAt", "DESC"]],
   });
@@ -130,8 +132,8 @@ exports.createitem = asyncHandler(async (req, res, next) => {
   if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
-  req.body.file = await saveFIle(req.files.file, "files");
-  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files");
+  req.body.file = await saveFIle(req.files.file, "files", null);
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files", "sub");
 
   req.body.firstFile = req.body.file;
   req.body.userId = req.userId;
@@ -214,6 +216,7 @@ exports.sendReq = asyncHandler(async (req, res, next) => {
 });
 //Цуцлагдсан хүсэлтийг дахин илгээхэд ашиглагдана
 exports.updateitem = asyncHandler(async (req, res, next) => {
+  console.log(req.files);
   let msg = "";
   if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
@@ -234,20 +237,22 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     },
   });
 
-  if (!item)
-    throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
+  if (!item) throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
 
-  if (!request)
-    throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
+  if (!request) throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
 
-  req.body.file = await saveFIle(req.files.file, "files");
-  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files");
+  req.body.file = await saveFIle(req.files.file, "files", null);
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files", "sub");
 
   req.body.firstFile = req.body.file;
   req.body.reqStatusId = variable.PENDING;
   req.body.canceledUser = null;
   console.log("Шинэ файл:", req.body.file);
+  console.log("Шинэ файл:", req.body.subFile);
   let removeItemFile = item.file;
+  let removeItemSubFile;
+  //Хэрвээ дахин илгээхдээ нэмэлт файл оруулсан бол өмнөх гэрээний файлыг утсгана
+  if (req.body.subFile) removeItemSubFile = item.file;
 
   updatedItem = await item.update(req.body);
 
@@ -255,36 +260,58 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     console.log("Өмнөх файл:", removeItemFile);
     fs.unlink(`./public/files/${removeItemFile}`, (err) => {
       if (err) {
-        msg = ", Цуцалсан хүсэлтийн файл олдсонгүй";
+        msg = ", Гэрээний өмнөх файл олдсонгүй";
         console.error(err);
         return;
       }
-      msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
+      msg = msg + ", Гэрээний өмнөх файлыг устгалаа";
     });
   } else msg = "Устгах файл байхгүй байна";
 
+  if (removeItemSubFile && removeItemSubFile != "") {
+    console.log("Өмнөх нэмэлт файл:", removeItemSubFile);
+    fs.unlink(`./public/files/${removeItemSubFile}`, (err) => {
+      if (err) {
+        msg = ", Гэрээний өмнөх нэмэлт файл олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Гэрээний өмнөх нэмэлт файлыг устгалаа";
+    });
+  }
+  //-----------------request ийн файл устгах
+  if (request.file && request.file != "") {
+    fs.unlink(`./public/files/${request.file}`, (err) => {
+      if (err) {
+        msg = ", Цуцалсан хүсэлтийн файлыг олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Цуцалсан хүсэлтийн нэмэлт файлыг устгалаа";
+    });
+  }
+  if (request.subFile && request.subFile != "") {
+    fs.unlink(`./public/files/${request.subFile}`, (err) => {
+      if (err) {
+        msg = ", Цуцалсан хүсэлтийн нэмэлт файл олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Цуцалсан хүсэлтийн нэмэлт файлыг устгалаа";
+    });
+  }
+
+
   //Шинээр дараагийн хүсэлт бэлдэх
-  // id, modifiedBy, workflowTemplateId, itemId, reqStatusId,
-  // recieveUser, suggestion, subFile, createdAt, updatedAt
-  let removeFileName = request.file;
 
   let requestBody = {
     modifiedBy: null,
     reqStatusId: variable.PENDING,
     suggestion: null,
     file: null,
+    subFile: null,
   };
   updatedReq = await request.update(requestBody);
-
-  if (removeFileName && removeFileName != "") {
-    fs.unlink(`./public/files/${removeFileName}`, (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
-    });
-  } else msg = "Устгах файл байхгүй байна";
 
   res.status(200).json({
     code: res.statusCode,
@@ -322,6 +349,35 @@ exports.downloadMyItemFile = asyncHandler(async (req, res, next) => {
       id: req.params.itemId,
       userId: req.userId,
       file: req.params.fileName,
+    },
+  });
+  if (!item) {
+    throw new MyError(
+      `${req.params.fileName} файлыг татах боломжгүй байна`,
+      400
+    );
+  }
+
+  res.download(
+    process.env.FILE_PATH + `/files/${req.params.fileName}`,
+    function (err) {
+      if (err) {
+        console.log(err);
+        res.status(404).end();
+      }
+    }
+  );
+});
+exports.downloadMyItemSubFile = asyncHandler(async (req, res, next) => {
+  if (!req.params.itemId || !req.params.fileName) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let item = await req.db.items.findOne({
+    where: {
+      id: req.params.itemId,
+      userId: req.userId,
+      subFile: req.params.fileName,
     },
   });
   if (!item) {

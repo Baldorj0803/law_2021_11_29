@@ -78,7 +78,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
   if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
 
   let query = `select r.id, c.name as company,i.name as gereeNer,i.subFile,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
-  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId
+  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId,i.subFile
   from recieveusers ru
   left join request r on ru.requestId=r.id
   left join items i on r.itemId = i.id
@@ -200,7 +200,7 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 
 
 const createNextReq = asyncHandler(async (item, request, body, itemStatus, req) => {
-  let itemBody = { reqStatusId: itemStatus, file: item.file }
+  let itemBody = { reqStatusId: itemStatus }
   if (itemStatus === variable.CANCELED) {
     itemBody.canceledUser = req.userId;
   }
@@ -234,11 +234,16 @@ const createNextReqApproved = asyncHandler(async (item, request, body, itemStatu
 })
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
-  let file = null, msg = "", data = {}, status, wt;
+  let file = null, subFile = null, msg = "", data = {}, status, wt;
   if (req.files && req.files.file) {
-    file = await checkFile(req.files.file);
+    file = await checkFile(req.files.file, null);
     req.body.file = file.name;
   } else req.body.file = null;
+
+  if (req.files && req.files.subFile) {
+    subFile = await checkFile(req.files.subFile, "sub");
+    req.body.subFile = subFile.name;
+  } else req.body.subFile = null;
 
 
   req.body.modifiedBy = req.userId;
@@ -259,8 +264,7 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
 
 
   if (!request) throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
-  if (request.modifiedBy !== null) console.log(`Энэ бол алдаа шүү`.bgRed);
-
+  if (request.modifiedBy !== null) throw new MyError("Энэхүү хүсэлтэд засвар орсон тул хандах боломжгүй, Системийн админд хандана уу");
 
   status = await req.db.req_status.findOne({
     where: {
@@ -276,14 +280,22 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
   let item = await req.db.items.findByPk(request.itemId);
 
   console.log(`req.body.file: ${req.body.file}`.bgBlue);
+  console.log(`req.body.subFile: ${req.body.subFile}`.bgBlue);
   if (req.files && req.body.file) item.file = req.body.file;
+  if (req.files && req.body.subFile) item.subFile = req.body.subFile;
   console.log(`item.file: ${item.file}`.bgBlue);
+  console.log(`item.subFile: ${item.subFile}`.bgBlue);
 
   if (!item) throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
 
   if (status.slug === "CANCELED") {
 
     if (file) file.mv(`./public/files/${file.name}`, (err) => {
+      if (err) {
+        throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+      }
+    });
+    if (subFile) subFile.mv(`./public/files/${subFile.name}`, (err) => {
       if (err) {
         throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
       }
@@ -414,32 +426,6 @@ exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
   }
 
   res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
-    if (err) {
-      console.log(err);
-      res.status(404).end()
-    }
-  });
-});
-
-//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг файл
-exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) => {
-
-
-  if (!req.params.requestId || !req.params.file || !req.params.itemId) {
-    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
-  }
-
-  let request = await req.db.request.findOne({
-    where: {
-      itemId: req.params.itemId,
-      id: req.params.requestId,
-      file: req.params.file,
-    }
-  })
-  if (!request) {
-    throw new MyError(`${req.params.file} файлыг татах боломжгүй байна`, 400)
-  }
-  res.download(process.env.FILE_PATH + `/files/${req.params.file}`, function (err) {
     if (err) {
       console.log(err);
       res.status(404).end()

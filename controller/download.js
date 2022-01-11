@@ -47,7 +47,7 @@ exports.getConfirmFile = asyncHandler(async (req, res, next) => {
     throw new MyError("Файл олдсонгүй");
 
   res.download(
-    process.env.FILE_PATH + `/confirmFile/${item.confirmFile}`,
+    process.env.FILE_PATH + `/files/${item.file}`,
     function (err) {
       if (err) {
         console.log(err);
@@ -191,3 +191,57 @@ exports.getSubFileIConfirm = asyncHandler(async (req, res, next) => {
     }
   );
 });
+
+
+//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг файл
+exports.downloadMyItemRequestFile = asyncHandler(async (req, res, next) => {
+
+
+  if (!req.params.requestId || !req.params.file || !req.params.itemId) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let request = await req.db.request.findOne({
+    where: {
+      itemId: req.params.itemId,
+      id: req.params.requestId,
+      file: req.params.file,
+    }
+  })
+  if (!request) {
+    throw new MyError(`${req.params.file} файлыг татах боломжгүй байна`, 400)
+  }
+  res.download(process.env.FILE_PATH + `/files/${req.params.file}`, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(404).end()
+    }
+  });
+});
+//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг нэмэлт файл
+exports.downloadMyItemRequestSubFile = asyncHandler(async (req, res, next) => {
+
+  console.log("---------------");
+
+  if (!req.params.requestId || !req.params.file || !req.params.itemId) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let request = await req.db.request.findOne({
+    where: {
+      itemId: req.params.itemId,
+      id: req.params.requestId,
+      subFile: req.params.file,
+    }
+  })
+  if (!request) {
+    throw new MyError(`${req.params.file} файлыг татах боломжгүй байна`, 400)
+  }
+  res.download(process.env.FILE_PATH + `/files/${req.params.file}`, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(404).end()
+    }
+  });
+});
+

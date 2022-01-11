@@ -4,7 +4,7 @@ const MyError = require("../utils/myError")
 const path = require('path')
 
 
-exports.saveFIle = asyncHandler(async (file, folderName) => {
+exports.saveFIle = asyncHandler(async (file, folderName, addName) => {
 	if (
 		!file.mimetype.endsWith("application/octet-stream") &&
 		!file.mimetype.endsWith("document") &&
@@ -29,7 +29,9 @@ exports.saveFIle = asyncHandler(async (file, folderName) => {
 			}
 		}
 	}
+
 	file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
+	if (addName) file.name = `file_${addName}_${Date.now()}${path.parse(file.name).ext}`;
 
 	file.mv(`./public/${folderName}/${file.name}`, (err) => {
 		if (err) {
@@ -42,7 +44,7 @@ exports.saveFIle = asyncHandler(async (file, folderName) => {
 
 
 
-exports.checkFile = asyncHandler(async (file) => {
+exports.checkFile = asyncHandler(async (file, addName) => {
 
 	if (
 		!file.mimetype.endsWith("application/octet-stream") &&
@@ -70,7 +72,7 @@ exports.checkFile = asyncHandler(async (file) => {
 	}
 
 	file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
-
+	if (addName) file.name = `file_${addName}_${Date.now()}${path.parse(file.name).ext}`;
 
 	return file;
 })

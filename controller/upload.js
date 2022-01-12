@@ -1,6 +1,5 @@
 const asyncHandler = require("express-async-handler");
 const MyError = require("../utils/myError");
-const { saveFIle } = require("../utils/saveFile");
 const variable = require("../config/const");
 const path = require("path");
 
@@ -8,7 +7,7 @@ exports.myApprovedContractPdf = asyncHandler(async (req, res, next) => {
   const item = await req.db.items.findOne({
     where: {
       id: req.params.itemId,
-      //   userId: req.userId,
+      userId: req.userId,
       reqStatusId: variable.APPROVED,
     },
   });
@@ -24,6 +23,8 @@ exports.myApprovedContractPdf = asyncHandler(async (req, res, next) => {
   if (!file.mimetype.endsWith("pdf")) {
     throw new MyError("Та pdf file оруулна уу", 400);
   }
+
+  console.log(file.size);
 
   if (file.mimetype.endsWith("pdf")) {
     if (process.env.MAX_FILE_SIZE_PDF) {

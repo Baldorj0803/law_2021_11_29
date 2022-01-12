@@ -1,39 +1,37 @@
 
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
-const paginate = require("../utils/paginate");
 
 
 exports.getworkflow_templates = asyncHandler(async (req, res, next) => {
-  let where = ""
-  if (req.query) {
-    let key = Object.keys(req.query)
-    let value = Object.values(req.query)
-    key.map((k, i) => {
-      (i === 0) ? where = where + `where ${k}=${value[i]} ` : where = where + ` and ${k}=${value[i]}`;
-    })
-  }
 
-  let query = `select wt.id,w.id as workflowId,w.min,w.max,cur.code,cmp.name as companyName,wt.step,wt.is_last,r.description as roleDesc,o.name as orgName
-  from workflow_templates wt
-  left join workflows w on wt.workflowId =w.id
-  left join roles r on wt.roleId=r.id
-  left join organizations o on wt.organizationId=o.id
-  left join currencies cur on w.currencyId=cur.id
-  left join company cmp on w.companyId = cmp.id `
-
-  if (where !== "") {
-    where.substring(0, where.length - 4);
-    console.log(where)
-    query = query + where
-  }
-
-  const [uResult, uMeta] = await req.db.sequelize.query(query);
+  let workflow_templates = await req.db.workflow_templates.findAll({
+    attributes: { exclude: ['roleId'] },
+    where: req.query,
+    include: [
+      {
+        model: req.db.workflows,
+        include: [
+          { model: req.db.currencies },
+          { model: req.db.company },
+          { model: req.db.workflowType }
+        ]
+      }, {
+        model: req.db.roles
+      },
+      {
+        model: req.db.workflowOrganizations,
+        include: {
+          model: req.db.organizations
+        }
+      }
+    ]
+  });
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
-    data: uResult
+    data: workflow_templates
   });
 });
 

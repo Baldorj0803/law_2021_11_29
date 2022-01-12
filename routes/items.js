@@ -6,27 +6,29 @@ const {
   createitem,
   updateitem,
   deleteitem,
-  getItem, myItems, downloadItemFile, downloadMyItemFile,
-  getItemByRequest,getConfirmedItems
+  getItem, myItems, downloadMyItemFile,
+  getMyItemByRequest, getConfirmedItems,
+  downloadMyItemSubFile
 } = require("../controller/items");
 
 const router = express.Router();
-console.log("---");
 router.use(protect);
-router.route('/').get(getitems);
-router.route("/myitem").get(myItems);
-//Батлагдсан гэрээнүүд
-router.route('/confirmed').get(getConfirmedItems);
-router.route('/:id').get(getItem);
-//Хүсэлт хүлээн авсан хүн энэхүү файлыг татах
-router.route('/request/:requestId').get(getItemByRequest)
-router.route('/:itemId/:fileName').get(downloadItemFile);
 //Хэрэглэгч өөрийнхөө гэрээний файлыг татах
-router.route('/myitem/:itemId/:fileName').get(downloadMyItemFile);
-router.route('/create').post(createitem);
+router.route('/myitem/:itemId/file/:fileName').get(downloadMyItemFile);
+//Хэрэглэгч өөрийнхөө гэрээний хавсралт файлыг татах
+router.route('/myitem/:itemId/subFile/:fileName').get(downloadMyItemSubFile);
+router.route('/').get(authorize, getitems);
+router.route("/myitem").get(authorize, myItems);
+//Батлагдсан гэрээнүүд
+router.route('/confirmed').get(authorize, getConfirmedItems);
+router.route('/:id').get(authorize, getItem);
+//Хүсэлт хүлээн авсан хүн энэхүү файлыг татах
+router.route('/request/:requestId').get(authorize, getMyItemByRequest);
+
+router.route('/create').post(authorize, createitem);
 // router.route("/update/:id").post(updateitem);
 //Дахин гэрэээг засварлаж явуулах, тухайх хүсэлтийг шинээр үүсгэх/update ххийх/
-router.route("/update/:itemId/:requestId").post(updateitem);
-router.route("/delete/:id").post(deleteitem);
+router.route("/update/:itemId/:requestId").post(authorize, updateitem);
+router.route("/delete/:id").post(authorize, deleteitem);
 
 module.exports = router;

@@ -4,6 +4,8 @@ const { recieveUser, getWorkflowTemplate } = require("../utils/recieveUser");
 const variable = require('../config/const')
 const path = require('path');
 const generateConfirmFile = require('../utils/generateConfirmFile');
+const { checkFile } = require("../utils/saveFile");
+const { Op } = require('sequelize')
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -22,34 +24,42 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
   if (!reqStatusId) {
     throw new MyError(`Төлөв олдсонгүй`, 400);
   }
-  let mainQuery = `select r.id,r.recieveUser, r.createdAt,u.id as sendUser,u.name as sendUserName,u.lastname,
-  u.profession,o.name as gazar,i.name as gereeName,c.name as companyName,rs.name as statusName,rs.slug ,w.min,w.max,cur.code 
-  from request r 
-  left join req_status rs on r.reqStatusId =rs.id 
-  left join items i on r.itemId=i.id 
+  let mainQuery = `select r.id,ru.userId as recieveUser, r.createdAt,u.id as sendUser,u.name as sendUserName,u.lastname,
+  u.profession,o.name as gazar,i.name as gereeName,c.name as companyName,rs.name as statusName,rs.slug ,w.min,w.max,cur.code
+  from recieveusers ru
+  left join request r on ru.requestId=r.id
+  left join req_status rs on r.reqStatusId =rs.id
+  left join items i on r.itemId=i.id
   left join workflows w on i.workflowId = w.id
-  left join currencies cur on w.currencyId=cur.id 
-  left join company c on i.company=c.id 
-  left join users u on i.userId=u.id 
+  left join currencies cur on w.currencyId=cur.id
+  left join company c on i.company=c.id
+  left join users u on i.userId=u.id
   left join organizations o on u.organizationId=o.id
     where r.reqStatusId= ${reqStatusId.id}`
   let isAdmin = await req.db.users.findOne({
-    where:{id:req.userId},
-    include:[
+    where: { id: req.userId },
+    include: [
       {
-        model:req.db.roles,
-        where:{
-          name:"admin"
+        model: req.db.roles,
+        where: {
+          name: "admin"
         }
       }
     ]
   })
-  console.log(isAdmin);
   if (!isAdmin) {
-    mainQuery = mainQuery + ` and r.recieveUser=${req.userId}`
+    mainQuery = mainQuery + ` and ru.userId=${req.userId} `
   }
-  const [uResult, uMeta] = await req.db.sequelize.query(mainQuery);
 
+  //Хүлээгдэж буй төлөвтэй бол хүсэлтийн modifiedBy нь null байна
+  //Бусад /Цуцалсан,Баталсан/ төлөвтэй бол modeifiedBy нь тухайн үйлдэл хийсэн хүний id
+  if (reqStatusId.id === variable.PENDING) {
+    mainQuery = mainQuery + ` and r.modifiedBy is NULL `
+  } else if ([variable.CANCELED, variable.COMPLETED]) {
+    mainQuery = mainQuery + ` and r.modifiedBy=${req.userId}`
+  } else throw new MyError("Төлөвт тохирох нөхцөл олдсонгүй, Системийн админд хандана уу?");
+
+  const [uResult, uMeta] = await req.db.sequelize.query(mainQuery);
 
 
   res.status(200).json({
@@ -64,43 +74,32 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
   let request = await req.db.request.findByPk(req.params.requestId);
   if (!request) throw new MyError(`${req.params.requestId} id тай хүсэлт олдсонгүй`);
   //Өөрт ирсэн хүсэлтийг харах боломжтой учир userId гаар шүүв
-  if (!req.params.requestId) {
-    throw new MyError(`Хүсэлтийн дугаар байхгүй байна.`, 400);
-  }
-  let query = `select r.id, c.name as company,i.name as gereeNer,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
-  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId 
-  from request r
+
+  if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
+
+  let query = `select r.id, c.name as company,i.name as gereeNer,i.subFile,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
+  u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId,i.subFile
+  from recieveusers ru
+  left join request r on ru.requestId=r.id
   left join items i on r.itemId = i.id
   left join workflows w on i.workflowId=w.id
   left join currencies cur on w.currencyId = cur.id
   left join company c on i.company=c.id
   left join users u on i.userId=u.id
   left join organizations o on u.organizationId=o.id
-  where r.id=${req.params.requestId} and r.recieveUser=${req.userId}`;
+  where r.id=${req.params.requestId} and ru.userId=${req.userId}`;
 
   const [uResult, uMeta] = await req.db.sequelize.query(query);
-
-  if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
-
-  let findFile = `select r.id as requestId,uploadFileName,r.itemId
-  from request r
-  left join workflow_templates wt on r.workflowTemplateId=wt.id
-  where r.uploadFileName is not null and r.itemId=${request.itemId}
-  order by wt.step desc
-  limit 1;`;
-
 
   if (uResult.length === 0) {
     throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
   }
 
-  const [fResult, fMeta] = await req.db.sequelize.query(findFile);
 
   res.status(200).json({
     code: res.statusCode,
     message: "success",
     data: uResult,
-    // lastFile: fResult,
   });
 });
 
@@ -200,30 +199,34 @@ exports.createrequest = asyncHandler(async (req, res, next) => {
 });
 
 
-const createNextReq = asyncHandler(async (item, request, body, itemStatus,req) => {
-  let itemBoyd = {reqStatusId:itemStatus,file:item.file}
-  if(itemStatus===variable.CANCELED){
-    itemBoyd.canceledUser = req.userId;
+const createNextReq = asyncHandler(async (item, request, body, itemStatus, req) => {
+  let itemBody = { reqStatusId: itemStatus }
+  if (itemStatus === variable.CANCELED) {
+    itemBody.canceledUser = req.userId;
   }
   let data = {}
   let updatedRequest = await request.update(body);
-  let updatedItem = await item.update(itemBoyd);
+  let updatedItem = await item.update(itemBody);
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
   return data;
 })
-const createNextReqApproved = asyncHandler(async (item, request, body, itemStatus,msg, req) => {
+const createNextReqApproved = asyncHandler(async (item, request, body, itemStatus, msg, req) => {
   //Approved gej vzne
   console.log("approved gej vzne");
   let itemBody = { reqStatusId: itemStatus }
-  
+
   let data = {}
+  console.log(`request:/${request.id}/ ийг update хийлээ`.yellow);
+  console.log(`${JSON.stringify(body)}`);
   let updatedRequest = await request.update(body);
+  console.log(`item:/${item.id}/ ийг update хийлээ`.yellow);
+  console.log(`${JSON.stringify(body)}`);
   let updatedItem = await item.update(itemBody);
   if (itemStatus === variable.APPROVED) {
     let c = await generateConfirmFile(req, item.id);
-    console.log("c:",c);
-    await item.update({confirmFile:c});
+    console.log("c:", c);
+    await item.update({ confirmFile: c });
   }
   data = { ...data, updatedRequest }
   data = { ...data, updatedItem }
@@ -231,76 +234,59 @@ const createNextReqApproved = asyncHandler(async (item, request, body, itemStatu
 })
 
 exports.updaterequest = asyncHandler(async (req, res, next) => {
-  let file;
-  if (req.files) {
-    file = req.files.uploadFileName;
-    if (
-      !file.mimetype.endsWith("application/octet-stream") &&
-      !file.mimetype.endsWith("document") &&
-      !file.mimetype.endsWith("msword") &&
-      !file.mimetype.endsWith("pdf")
-    ) {
-      throw new MyError("Та word эсвэл pdf file upload хийнэ үү", 400);
-    }
+  let file = null, subFile = null, msg = "", data = {}, status, wt;
+  if (req.files && req.files.file) {
+    file = await checkFile(req.files.file, null);
+    req.body.file = file.name;
+  } else req.body.file = null;
 
-    if (file.mimetype.endsWith("document") || file.mimetype.endsWith("msword")) {
-      if (process.env.MAX_FILE_SIZE_WORD) {
-        if (file.size > process.env.MAX_FILE_SIZE_WORD) {
-          throw new MyError("Таны файлын хэмжээ их байна", 400);
-        }
-      }
-    }
-
-    if (file.mimetype.endsWith("pdf")) {
-      if (process.env.MAX_FILE_SIZE_PDF) {
-        if (file.size > process.env.MAX_FILE_SIZE_PDF) {
-          throw new MyError("Таны файлын хэмжээ их байна", 400);
-        }
-      }
-    }
-
-    req.body.uploadFileName = `file_${Date.now()}${path.parse(file.name).ext}`;
-    file.name = req.body.uploadFileName;
-  }
+  if (req.files && req.files.subFile) {
+    subFile = await checkFile(req.files.subFile, "sub");
+    req.body.subFile = subFile.name;
+  } else req.body.subFile = null;
 
 
-
-
-  let msg = "", data = {}
-
+  req.body.modifiedBy = req.userId;
   let request = await req.db.request.findOne({
     where: {
       id: req.params.id,
-      recieveUser: req.userId,
-      modifiedBy: null
+      modifiedBy: null,
+      reqStatusId: { [Op.ne]: variable.APPROVED },
+
+    },
+    include: {
+      model: req.db.recieveUsers,
+      where: {
+        userId: req.userId
+      }
     }
   });
 
-  if (!request) {
-    throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
-  }
 
-  req.body.reqStatusId = await req.db.req_status.findOne({
+  if (!request) throw new MyError(`${req.params.id} id тэй хүсэлт олдсонгүй.`, 400);
+  if (request.modifiedBy !== null) throw new MyError("Энэхүү хүсэлтэд засвар орсон тул хандах боломжгүй, Системийн админд хандана уу");
+
+  status = await req.db.req_status.findOne({
     where: {
       slug: req.body.requestId
     },
-  })
-  req.body.reqStatusId = req.body.reqStatusId.id
-  req.body.modifiedBy = req.userId;
+  });
+  req.body.reqStatusId = status.id;
 
 
 
   // ------------- Гэрээний төрлийг өөрчлөх -----------------
-
-  let status = await req.db.req_status.findByPk(req.body.reqStatusId);
   //хэрэв цуцлах хүсэлт ирвэл гэрээг цуцлагдсан төлөвт оруулах
   let item = await req.db.items.findByPk(request.itemId);
 
-  console.log(`req.body.uploadFileName: ${req.body.uploadFileName}`.bgBlue);
-  if(req.files&&req.body.uploadFileName)item.file=req.body.uploadFileName;
+  console.log(`req.body.file: ${req.body.file}`.bgBlue);
+  console.log(`req.body.subFile: ${req.body.subFile}`.bgBlue);
+  if (req.files && req.body.file) item.file = req.body.file;
+  if (req.files && req.body.subFile) item.subFile = req.body.subFile;
   console.log(`item.file: ${item.file}`.bgBlue);
+  console.log(`item.subFile: ${item.subFile}`.bgBlue);
 
-  if (!item)throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
+  if (!item) throw new MyError(`${req.params.id} id тэй гэрээ олдсонгүй.`, 400);
 
   if (status.slug === "CANCELED") {
 
@@ -309,19 +295,23 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
       }
     });
-    data = await createNextReq(item, request, req.body, variable.CANCELED,req)
+    if (subFile) subFile.mv(`./public/files/${subFile.name}`, (err) => {
+      if (err) {
+        throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+      }
+    });
+    data = await createNextReq(item, request, req.body, variable.CANCELED, req)
     msg = "Гэрээ цуцлагдлаа"
   } else if (status.slug === "COMPLETED") {
-    console.log("Хуучин хүсэлтийн дамжлагын дугаар:", request.workflowTemplateId);
-    //хэрэв зөвшөөрсөн хүсэлт ирвэл сүүлийн алхам эсэхийг шалгаад батлагдсан эсэхийг тодорхойлох
-    let wt = await req.db.workflow_templates.findOne({
+    //Одоогийн тэмплэйтийг олох
+    wt = await req.db.workflow_templates.findOne({
       where: {
         id: request.workflowTemplateId,
-        is_last: 1,
       },
     });
 
-    if (wt) {
+    //хэрэв зөвшөөрсөн хүсэлт ирвэл сүүлийн алхам эсэхийг шалгаад батлагдсан эсэхийг тодорхойлох
+    if (wt.is_last === 1) {
       console.log('Сүүлийн алхам нөхцөл рүү орлооо'.red);
       if (file) file.mv(`./public/files/${file.name}`, (err) => {
         if (err) {
@@ -332,28 +322,28 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
       data = await createNextReqApproved(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа", req)
       msg = "Гэрээ батлагдлаа"
     } else {
-      // id, modifiedBy, workflowTemplateId, itemId, responseId, reqStatusId, recieveUser, suggestion, createdAt, updatedAt
-      let new_request = {};
-      //Одоогийн тэмплэйтийг олох
-      let wt = await req.db.workflow_templates.findOne({
-        where: {
-          id: request.workflowTemplateId,
-        },
-      });
-      //Дараагийн хүсэлт илгээгдэх темплэйтийг олох
-      new_request.workflowTemplateId = await getWorkflowTemplate(req, item, wt.step + 1)
-      console.log("Дараагийн алхамын id:", new_request.workflowTemplateId)
 
-      if (new_request.workflowTemplateId === 0) {
+      let new_request = {};
+      //Дараагийн хүсэлт илгээгдэх темплэйтийг олох
+      let obj = await getWorkflowTemplate(req, item, wt.step + 1);
+
+      if (obj === 0) {
         //Сүүлийн алхам гэж үзэх бөгөөд дээр шалгасан болохоор иишээ орно гэж бодохгүй байна
         //Гэхдээ яахав кк
         data = await createNextReqApproved(item, request, req.body, variable.APPROVED, "Гэрээ Батлагдлаа", req)
         msg = "Гэрээ батлагдлаа"
       } else {
-        new_request.itemId = item.id,
-          new_request.reqStatusId = variable.PENDING;
-        let useTemplate = await req.db.workflow_templates.findByPk(new_request.workflowTemplateId)
-        if (new_request.workflowTemplateId) new_request.recieveUser = await recieveUser(req, useTemplate, item)
+        let recieveusers, new_recieveUsers = [];
+        new_request.workflowTemplateId = obj.workflowTemplateId;
+        console.log("Дараагийн алхамын id:", new_request.workflowTemplateId);
+        new_request.itemId = item.id;
+        new_request.reqStatusId = variable.PENDING;
+        recieveusers = obj.userIds;
+        if (obj.workflowTemplateId && !obj.userIds) {
+          let useTemplate = await req.db.workflow_templates.findByPk(new_request.workflowTemplateId);
+          recieveusers = await recieveUser(req, useTemplate, item);
+        }
+
 
         if (file) file.mv(`./public/files/${file.name}`, (err) => {
           if (err) {
@@ -362,13 +352,24 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         });
 
         new_request = await req.db.request.create(new_request);
+        recieveusers.map(i => {
+          new_recieveUsers.push({
+            requestId: new_request.id,
+            userId: i
+          })
+        })
+
+        console.log(new_recieveUsers);
+        new_recieveUsers = await req.db.recieveUsers.bulkCreate(new_recieveUsers);
         // Шинэ хүсэлт шаардлагтай талбарууд байгаа тул итемийн төлөвийг орж ирсэн төлөв болгож өөрчлөх
         // item.reqStatusId = variable.COMPLETED;
-        let updated_item = await item.update({ reqStatusId: variable.PENDING,file:item.file });
+        let updated_item = await item.update({ reqStatusId: variable.PENDING, file: item.file });
+        req.body.modifiedBy = req.userId
         request = await request.update(req.body)
         data = { ...data, new_request }
         data = { ...data, updated_item }
         data = { ...data, request }
+        data = { ...data, new_recieveUsers }
       }
     }
   }
@@ -425,32 +426,6 @@ exports.downloadRequestFile = asyncHandler(async (req, res, next) => {
   }
 
   res.download(process.env.FILE_PATH + `/files/${req.params.fileName}`, function (err) {
-    if (err) {
-      console.log(err);
-      res.status(404).end()
-    }
-  });
-});
-
-//Миний үүсгэсэн гэрээн дээрх хүсэлтүүдийг файл
-exports.downloadMyItemRequestUploadedFile = asyncHandler(async (req, res, next) => {
-
-
-  if (!req.params.requestId || !req.params.uploadFileName || !req.params.itemId) {
-    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
-  }
-
-  let request = await req.db.request.findOne({
-    where: {
-      itemId: req.params.itemId,
-      id: req.params.requestId,
-      uploadFileName: req.params.uploadFileName,
-    }
-  })
-  if (!request) {
-    throw new MyError(`${req.params.uploadFileName} файлыг татах боломжгүй байна`, 400)
-  }
-  res.download(process.env.FILE_PATH + `/files/${req.params.uploadFileName}`, function (err) {
     if (err) {
       console.log(err);
       res.status(404).end()

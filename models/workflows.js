@@ -30,9 +30,9 @@ module.exports = function (sequelize, DataTypes) {
         },
         currencyId: {
             type: DataTypes.INTEGER(10).UNSIGNED,
-            allowNull:true,
+            allowNull: true,
             references: {
-                allowNull:true,
+                allowNull: true,
                 model: "currencies",
                 key: "id",
             },
@@ -51,6 +51,10 @@ module.exports = function (sequelize, DataTypes) {
                 model: "workflowType",
                 key: "id",
             },
+        },
+        confirmTemplateFileName: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
     },
         {

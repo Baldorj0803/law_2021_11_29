@@ -6,6 +6,7 @@ const { saveFIle } = require("../utils/saveFile");
 const variable = require("../config/const");
 const fs = require("fs");
 const { request } = require("express");
+const { Op } = require('sequelize')
 
 exports.getitems = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -77,11 +78,6 @@ exports.myItems = asyncHandler(async (req, res, next) => {
     {
       model: req.db.request,
       order: [["createdAt", "DESC"]],
-      // include:[
-      // 	{
-      // 		model:req.db.req_status
-      // 	}
-      // ]
     },
   ];
   query.where = { userId: req.userId };
@@ -96,10 +92,16 @@ exports.myItems = asyncHandler(async (req, res, next) => {
             model: req.db.req_status,
           },
           {
-            model: req.db.workflow_templates,
-          },
+            model: req.db.recieveUsers,
+            include: {
+              model: req.db.users,
+              include: { model: req.db.organizations }
+            }
+          }
         ],
+        order: [["createdAt", "DESC"]],
       },
+
     ],
     order: [["createdAt", "DESC"]],
   });
@@ -127,12 +129,13 @@ exports.getItem = asyncHandler(async (req, res, next) => {
 
 exports.createitem = asyncHandler(async (req, res, next) => {
   let msg;
-  if (!req.files) {
+  if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
+  req.body.file = await saveFIle(req.files.file, "files", null);
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files", "sub");
 
-  req.body.file = await saveFIle(req.files.file, req.body.file, "files");
-
+  req.body.firstFile = req.body.file;
   req.body.userId = req.userId;
   req.body.typeId = variable.DRAFT;
   req.body.workflowId = parseInt(req.body.workflowId);
@@ -143,8 +146,8 @@ exports.createitem = asyncHandler(async (req, res, next) => {
 
   //хэрвээ гэрээ үүсвэл шинээр хүсэлт бичигдэнэ
   let new_request = {};
-  let useTemplateId = await getWorkflowTemplate(req, newitem, 1);
-  if (useTemplateId === 0) {
+  let obj = await getWorkflowTemplate(req, newitem, 1);
+  if (obj === 0) {
     newitem.typeId = variable.PENDING;
     await newitem.save();
     res.status(200).json({
@@ -155,13 +158,32 @@ exports.createitem = asyncHandler(async (req, res, next) => {
       },
     });
   }
-  new_request.workflowTemplateId = useTemplateId;
-  (new_request.itemId = newitem.id),
-    (new_request.reqStatusId = variable.PENDING);
-  let useTemplate = await req.db.workflow_templates.findByPk(useTemplateId);
-  if (new_request.workflowTemplateId)
-    new_request.recieveUser = await recieveUser(req, useTemplate, newitem);
+  new_request.workflowTemplateId = obj.workflowTemplateId;
+  new_request.itemId = newitem.id;
+  new_request.reqStatusId = variable.PENDING;
+
+  let new_recieveUsers = [];
+  let recieveusers;
+  if (!obj.userIds) {
+    let useTemplate = await req.db.workflow_templates.findByPk(obj.workflowTemplateId);
+    if (new_request.workflowTemplateId)
+      recieveusers = await recieveUser(req, useTemplate, newitem);
+    //Хүлээн авах хэрэглэгчидээр recieveUsers үүсгэх
+  } else recieveusers = obj.userIds;
+
   new_request = await req.db.request.create(new_request);
+
+  recieveusers.map(i => {
+    new_recieveUsers.push({
+      requestId: new_request.id,
+      userId: i
+    })
+  })
+
+  console.log(new_recieveUsers);
+  new_recieveUsers = await req.db.recieveUsers.bulkCreate(new_recieveUsers);
+
+
   msg = msg + "Хүсэлт дараагийн шатанд амжилттай илгээгдлээ";
   newitem.reqStatusId = variable.PENDING;
   await newitem.save();
@@ -172,6 +194,7 @@ exports.createitem = asyncHandler(async (req, res, next) => {
     data: {
       newitem,
       new_request,
+      new_recieveUsers
     },
   });
 });
@@ -193,9 +216,9 @@ exports.sendReq = asyncHandler(async (req, res, next) => {
 });
 //Цуцлагдсан хүсэлтийг дахин илгээхэд ашиглагдана
 exports.updateitem = asyncHandler(async (req, res, next) => {
+  console.log(req.files);
   let msg = "";
-
-  if (!req.files) {
+  if (!req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
 
@@ -203,25 +226,33 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     where: {
       id: req.params.itemId,
       userId: req.userId,
+      reqStatusId: variable.CANCELED
     },
   });
   let request = await req.db.request.findOne({
     where: {
       id: req.params.requestId,
       reqStatusId: variable.CANCELED,
+      modifiedBy: { [Op.ne]: null }
     },
   });
 
-  if (!item)
-    throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
+  if (!item) throw new MyError(`${req.params.itemId} id тэй item олдсонгүй.`, 400);
 
-  if (!request)
-    throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
+  if (!request) throw new MyError(`${req.params.requestId} id тэй request олдсонгүй.`, 400);
 
-  req.body.file = await saveFIle(req.files.file, req.body.file, "files");
+  req.body.file = await saveFIle(req.files.file, "files", null);
+  if (req.files.subFile) req.body.subFile = await saveFIle(req.files.subFile, "files", "sub");
+
+  req.body.firstFile = req.body.file;
   req.body.reqStatusId = variable.PENDING;
+  req.body.canceledUser = null;
   console.log("Шинэ файл:", req.body.file);
+  console.log("Шинэ файл:", req.body.subFile);
   let removeItemFile = item.file;
+  let removeItemSubFile;
+  //Хэрвээ дахин илгээхдээ нэмэлт файл оруулсан бол өмнөх гэрээний файлыг утсгана
+  if (req.body.subFile) removeItemSubFile = item.file;
 
   updatedItem = await item.update(req.body);
 
@@ -229,35 +260,68 @@ exports.updateitem = asyncHandler(async (req, res, next) => {
     console.log("Өмнөх файл:", removeItemFile);
     fs.unlink(`./public/files/${removeItemFile}`, (err) => {
       if (err) {
+        msg = ", Гэрээний өмнөх файл олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Гэрээний өмнөх файлыг устгалаа";
+    });
+  } else msg = "Устгах файл байхгүй байна";
+
+  if (removeItemSubFile && removeItemSubFile != "") {
+    console.log("Өмнөх нэмэлт файл:", removeItemSubFile);
+    fs.unlink(`./public/files/${removeItemSubFile}`, (err) => {
+      if (err) {
+        msg = ", Гэрээний өмнөх нэмэлт файл олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Гэрээний өмнөх нэмэлт файлыг устгалаа";
+    });
+  }
+  //-----------------request ийн файл устгах
+  if (request.file && request.file != "") {
+    fs.unlink(`./public/files/${request.file}`, (err) => {
+      if (err) {
+        msg = ", Цуцалсан хүсэлтийн файлыг олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Цуцалсан хүсэлтийн нэмэлт файлыг устгалаа";
+    });
+  }
+  if (request.subFile && request.subFile != "") {
+    fs.unlink(`./public/files/${request.subFile}`, (err) => {
+      if (err) {
+        msg = ", Цуцалсан хүсэлтийн нэмэлт файл олдсонгүй";
+        console.error(err);
+        return;
+      }
+      msg = msg + ", Цуцалсан хүсэлтийн нэмэлт файлыг устгалаа";
+    });
+  }
+
+
+  //Шинээр дараагийн хүсэлт бэлдэх
+
+  let requestBody = {
+    modifiedBy: null,
+    reqStatusId: variable.PENDING,
+    suggestion: null,
+    file: null,
+    subFile: null,
+  };
+  updatedReq = await request.update(requestBody);
+
+  if (removeFileName && removeFileName != "") {
+    fs.unlink(`./public/files/${removeFileName}`, (err) => {
+      if (err) {
         console.error(err);
         return;
       }
       msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
     });
   } else msg = "Устгах файл байхгүй байна";
-
-  //Шинээр дараагийн хүсэлт бэлдэх
-  // id, modifiedBy, workflowTemplateId, itemId, reqStatusId,
-  // recieveUser, suggestion, uploadFileName, createdAt, updatedAt
-  let removeFileName = request.uploadFileName;
-
-  let requestBody = {
-    modifiedBy: null,
-    reqStatusId: variable.PENDING,
-    suggestion: null,
-    uploadFileName: null,
-  };
-  updatedReq = await request.update(requestBody);
-
-  // if (removeFileName && removeFileName != "") {
-  //   fs.unlink(`./public/files/${removeFileName}`, (err) => {
-  //     if (err) {
-  //       console.error(err);
-  //       return;
-  //     }
-  //     msg = ", Цуцалсан хүсэлтийн файлыг устгалаа";
-  //   });
-  // } else msg = "Устгах файл байхгүй байна";
 
   res.status(200).json({
     code: res.statusCode,
@@ -314,26 +378,16 @@ exports.downloadMyItemFile = asyncHandler(async (req, res, next) => {
     }
   );
 });
-
-exports.downloadItemFile = asyncHandler(async (req, res, next) => {
+exports.downloadMyItemSubFile = asyncHandler(async (req, res, next) => {
   if (!req.params.itemId || !req.params.fileName) {
     throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
   }
 
-  let check = await req.db.request.findOne({
-    where: {
-      recieveUser: req.userId,
-      itemId: req.params.itemId,
-    },
-  });
-  if (!check)
-    throw new MyError(
-      "Та энэ гэрээн дээр хүсэлт аваагүй тул татах боломжгүй байна"
-    );
   let item = await req.db.items.findOne({
     where: {
       id: req.params.itemId,
-      file: req.params.fileName,
+      userId: req.userId,
+      subFile: req.params.fileName,
     },
   });
   if (!item) {
@@ -354,7 +408,9 @@ exports.downloadItemFile = asyncHandler(async (req, res, next) => {
   );
 });
 
-exports.getItemByRequest = asyncHandler(async (req, res, next) => {
+
+
+exports.getMyItemByRequest = asyncHandler(async (req, res, next) => {
   let request = await req.db.request.findByPk(req.params.requestId);
 
   if (!request) {

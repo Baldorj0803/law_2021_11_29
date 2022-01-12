@@ -54,6 +54,9 @@ module.exports = function (sequelize, DataTypes) {
       password: {
         allowNull: false,
         type: DataTypes.STRING(255),
+        get: function () {
+          return null;
+        },
       },
       last_login_ip: {
         type: DataTypes.STRING(255),
@@ -63,14 +66,6 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         references: {
           model: "roles",
-          key: "id",
-        },
-      },
-      branchId: {
-        type: DataTypes.INTEGER(10).UNSIGNED,
-        allowNull: true,
-        references: {
-          model: "branch",
           key: "id",
         },
       },

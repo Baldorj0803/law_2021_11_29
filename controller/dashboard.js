@@ -56,7 +56,9 @@ exports.getItemDetail = asyncHandler(async (req, res, next) => {
     left join users u on i.userId=u.id
     left join organizations o on u.organizationId=o.id
     left join req_status rs on i.reqStatusId=rs.id
-    where rs.id not in (${variable.CANCELED},${variable.DRAFT})`
+    where rs.id not in (${variable.CANCELED},${variable.DRAFT})
+    order by i.updatedAt desc
+    limit 10`
 
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 

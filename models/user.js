@@ -54,9 +54,6 @@ module.exports = function (sequelize, DataTypes) {
       password: {
         allowNull: false,
         type: DataTypes.STRING(255),
-        get: function () {
-          return null;
-        },
       },
       last_login_ip: {
         type: DataTypes.STRING(255),

@@ -7,23 +7,23 @@ let compiledTemplate = Hogan.compile(template);
 // async..await is not allowed in global scope, must use a wrapper
 const sendEmail = async (options) => {
 
-    // let transporter = nodemailer.createTransport({
-    //     host: "smtp.mailtrap.io",
-    //     port: 2525,
-    //     auth: {
-    //         user: "4d2bc53c78e8fd",
-    //         pass: "7faf6f4fc6fcb6"
-    //     }
-    // });
-
     let transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
+        host: "smtp.mailtrap.io",
+        port: 2525,
         auth: {
-            user: process.env.SMTP_USERNAME,
-            pass: process.env.SMTP_PASSWORD
+            user: "4d2bc53c78e8fd",
+            pass: "7faf6f4fc6fcb6"
         }
     });
+
+    // let transporter = nodemailer.createTransport({
+    //     host: process.env.SMTP_HOST,
+    //     port: process.env.SMTP_PORT,
+    //     auth: {
+    //         user: process.env.SMTP_USERNAME,
+    //         pass: process.env.SMTP_PASSWORD
+    //     }
+    // });
 
     // send mail with defined transport object
     let info = await transporter.sendMail({

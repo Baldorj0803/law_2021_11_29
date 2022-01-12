@@ -5,7 +5,8 @@ const variable = require('../config/const')
 const path = require('path');
 const generateConfirmFile = require('../utils/generateConfirmFile');
 const { checkFile } = require("../utils/saveFile");
-const { Op } = require('sequelize')
+const { Op } = require('sequelize');
+const sendEmail = require("../utils/email");
 
 exports.getrequests = asyncHandler(async (req, res, next) => {
 
@@ -366,6 +367,15 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
         let updated_item = await item.update({ reqStatusId: variable.PENDING, file: item.file });
         req.body.modifiedBy = req.userId
         request = await request.update(req.body)
+
+        new_recieveUsers.map(async u => {
+          let user = await req.db.users.findByPk(u.userId);
+          await email({
+            subject: 'Хуулийн гэрээ байгуулах тухай',
+            to: user.email,
+          })
+        })
+
         data = { ...data, new_request }
         data = { ...data, updated_item }
         data = { ...data, request }

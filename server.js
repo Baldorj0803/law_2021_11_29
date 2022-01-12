@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const logger = require("./middleware/logger");
 const cors = require("cors");
 const fileupload = require("express-fileupload");
+const email = require('./utils/email')
 // Router оруулж ирэх
 const organizationLevelsRoutes = require("./routes/organization_levels");
 const rolesRoutes = require("./routes/roles");
@@ -41,6 +42,7 @@ const asyncHandler = require("./middleware/asyncHandle");
 const generateConfirmFile = require("./utils/generateConfirmFile");
 
 const app = express();
+app.set("view engine", "hjs");
 
 var whitelist = [process.env.WHITELIST];
 var corsOptions = {
@@ -62,7 +64,7 @@ app.use(
   })
 );
 app.use(cors(corsOptions));
-app.use("/static", express.static(path.join(__dirname, "public")));
+// app.use("/static", express.static(path.join(__dirname, "public")));
 app.use(logger);
 app.use(injectDb(db));
 // app.use(morgan("combined", { stream: accessLogStream }));
@@ -146,7 +148,12 @@ db.workflowOrganizations.belongsTo(db.workflow_templates);
 db.workflow_templates.hasMany(db.workflowOrganizations);
 
 app.get("/test", asyncHandler(async (req, res, next) => {
-  let c = await generateConfirmFile(req, 10);
+  // let c = await generateConfirmFile(req, 10);
+  let c = await email({
+    subject: 'Хуулийн гэрээ байгуулах тухай',
+    email: 'baldorj.z@gobi.mn',
+    message: { test: 'ene bol test' }
+  })
   res.status(200).json({
     data: c
   })

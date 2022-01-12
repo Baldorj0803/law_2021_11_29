@@ -6,7 +6,8 @@ const { saveFIle } = require("../utils/saveFile");
 const variable = require("../config/const");
 const fs = require("fs");
 const { request } = require("express");
-const { Op } = require('sequelize')
+const { Op } = require('sequelize');
+const email = require('../utils/email')
 
 exports.getitems = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -187,6 +188,14 @@ exports.createitem = asyncHandler(async (req, res, next) => {
   msg = msg + "Хүсэлт дараагийн шатанд амжилттай илгээгдлээ";
   newitem.reqStatusId = variable.PENDING;
   await newitem.save();
+
+  new_recieveUsers.map(async u => {
+    let user = await req.db.users.findByPk(u.userId);
+    await email({
+      subject: 'Хуулийн гэрээ байгуулах тухай',
+      to: user.email,
+    })
+  })
 
   res.status(200).json({
     code: res.statusCode,

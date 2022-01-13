@@ -189,13 +189,28 @@ exports.createitem = asyncHandler(async (req, res, next) => {
   newitem.reqStatusId = variable.PENDING;
   await newitem.save();
 
-  new_recieveUsers.map(async u => {
-    let user = await req.db.users.findByPk(u.userId);
-    await email({
-      subject: 'Хуулийн гэрээ байгуулах тухай',
-      to: user.email,
-    })
+
+
+  let userEmail = await req.db.users.findAll({
+    where: {
+      id: { [Op.in]: recieveusers },
+    },
+    attributes: ['email'],
+    raw: true
   })
+  if (userEmail.length > 0) {
+    userEmail.map(async u => {
+      if (u.email) {
+        let info = await email({
+          subject: 'Хуулийн гэрээ байгуулах тухай',
+          to: u.email,
+        })
+        console.log(`${JSON.stringify(info.accepted)} хэрэглэгчид емэйл илгээгдлээ`.green);
+      }
+    })
+  }
+
+
 
   res.status(200).json({
     code: res.statusCode,

@@ -30,7 +30,7 @@ const sendEmail = async (options) => {
         from: process.env.SMTP_USERNAME, // sender address
         to: options.to,
         subject: options.subject,
-        html: compiledTemplate.render(options.message),
+        html: (options.type === 'changePassword') ? options.message : compiledTemplate.render(options.message),
     });
 
     // console.log("Message sent: %s", info.messageId);

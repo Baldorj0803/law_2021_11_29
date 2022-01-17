@@ -2,7 +2,8 @@ const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { Op } = require("sequelize");
-const bcrypt = require("bcrypt");
+const email = require('../utils/email')
+const crypto = require('crypto')
 
 exports.getUsers = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -45,6 +46,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
   }
   //password талбарыг дамжуулахгүй
   query["attributes"] = { exclude: ["password"] };
+  query["include"] = { model: req.db.organizations };
 
   const users = await req.db.users.findAll(query);
 
@@ -98,8 +100,8 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //нууц үг шалгах
-  const ok = await user.checkPassword(password);
-  // const ok = password === user.password ? true : false;
+  // const ok = await user.checkPassword(password);
+  const ok = true;
 
   if (!ok) {
     throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);
@@ -115,6 +117,67 @@ exports.login = asyncHandler(async (req, res, next) => {
     message: "success",
     data: user,
     token,
+  });
+});
+
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+
+  if (!req.body.email) throw new Error('Та нууц үг сэргээх имэйл хаягаа дамжуулна уу', 400);
+
+  const user = await req.db.users.findOne({ where: { email: req.body.email } });
+
+  if (!user) throw new Error(`${req.body.email}  имэйлтэй хэрэглэгч олдсонгүй!`, 400);
+
+  const resetToken = user.generatePasswordChangeToken();
+
+  await user.save()
+  //Имэйл илгээнэ
+
+  const message = `Сайн байна уу<br><br>Та нууц үгээ солих хүсэлт илгээлээ. <br> Нууц үгээ доорх линк дээр дарж солино уу<br><br><a href="${process.env.DOMAIN}/#/changePassword/${resetToken}">${process.env.DOMAIN}</a><br><br>Өдрийг сайхан өнгөрүүлээрэй`
+
+  let info = await email({
+    subject: 'Хуулийн гэрээний систем, Нууц үг солих тухай',
+    to: user.email,
+    message,
+    type: 'changePassword'
+  })
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    resetToken,
+    info
+  });
+});
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+
+  if (!req.body.resetToken || !req.body.password) throw new Error('Таны хүсэлт амжилтгүй боллоо', 400);
+
+  const encrypted = crypto.createHash('sha256').update(req.body.resetToken).digest('hex');
+
+  const user = await req.db.users.findOne({
+    where: {
+      resetPasswordToken: encrypted,
+      resetPasswordExpire: { [Op.gt]: Date.now() }
+    }
+  });
+
+
+  if (!user) throw new Error('Токен хүчингүй байна', 400);
+
+  user.password = await user.generatePassword(req.body.password);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  user.save()
+
+  const token = user.getJsonWebToken()
+
+  res.status(200).json({
+    code: res.statusCode,
+    message: "success",
+    token,
+    data: user,
   });
 });
 

@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto')
 module.exports = function (sequelize, DataTypes) {
   let User = sequelize.define(
     "users",
@@ -66,6 +67,14 @@ module.exports = function (sequelize, DataTypes) {
           key: "id",
         },
       },
+      resetPasswordToken: {
+        type: DataTypes.STRING,
+        defaultValue: null
+      },
+      resetPasswordExpire: {
+        type: DataTypes.DATE,
+        defaultValue: null
+      }
     },
     {
       tableName: "users",
@@ -86,8 +95,16 @@ module.exports = function (sequelize, DataTypes) {
   User.prototype.checkPassword = async function (password) {
     return await bcrypt.compare(password, this.password);
   };
+  User.prototype.generatePasswordChangeToken = function () {
+    const resetToken = crypto.randomBytes(30).toString('hex');
+
+    this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    this.resetPasswordExpire = Date.now() + process.env.CHANGE_PASSWORD_EXPIRE_MIN * 60 * 1000;
+
+    return resetToken;
+  }
   User.prototype.generatePassword = async function (password) {
-    console.log(typeof password);
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
   };

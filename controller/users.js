@@ -133,7 +133,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   await user.save()
   //Имэйл илгээнэ
 
-  const message = `Сайн байна уу<br><br>Та нууц үгээ солих хүсэлт илгээлээ. <br> Нууц үгээ доорх линк дээр дарж солино уу<br><br><a href="${process.env.DOMAIN}/changePassword/${resetToken}">${process.env.DOMAIN}</a><br><br>Өдрийг сайхан өнгөрүүлээрэй`
+  const message = `Сайн байна уу<br><br>Та нууц үгээ солих хүсэлт илгээлээ. <br> Нууц үгээ доорх линк дээр дарж солино уу<br><br><a href="${process.env.DOMAIN}/#/changePassword/${resetToken}">${process.env.DOMAIN}</a><br><br>Өдрийг сайхан өнгөрүүлээрэй`
 
   let info = await email({
     subject: 'Хуулийн гэрээний систем, Нууц үг солих тухай',

@@ -50,15 +50,32 @@ exports.getRequestProcess = asyncHandler(async (req, res, next) => {
 exports.getItemDetail = asyncHandler(async (req, res, next) => {
 
 
+    // let query = `select i.id, i.createdAt,u.name as userName,u.profession,o.name as orgName,i.name as itemName,
+    // rs.slug,rs.name as statusName
+    // from items i
+    // left join users u on i.userId=u.id
+    // left join organizations o on u.organizationId=o.id
+    // left join req_status rs on i.reqStatusId=rs.id
+    // where rs.id not in (${variable.CANCELED},${variable.DRAFT})
+    // order by i.updatedAt desc
+    // limit 10`
+
     let query = `select i.id, i.createdAt,u.name as userName,u.profession,o.name as orgName,i.name as itemName,
-    rs.slug,rs.name as statusName
+    rs.slug,rs.name as statusName,r.*
     from items i
+    left join (
+		select r.itemId,u.profession,u.lastname as rlastname,u.name as ruserName,o.name as rorgName from request  r 
+    left join recieveUsers ru on r.id=ru.requestId
+    left join users u on u.id=ru.userId
+    left join organizations o on u.organizationId=o.id
+    where r.reqStatusId=${variable.PENDING}
+    ) as r on r.itemId=i.id
     left join users u on i.userId=u.id
     left join organizations o on u.organizationId=o.id
     left join req_status rs on i.reqStatusId=rs.id
-    where rs.id not in (${variable.CANCELED},${variable.DRAFT})
+    where rs.id not in (${variable.CANCELED},${variable.DRAFT}) 
     order by i.updatedAt desc
-    limit 10`
+    limit 10;`
 
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 

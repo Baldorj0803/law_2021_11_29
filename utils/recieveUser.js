@@ -67,6 +67,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           workflow_template = checkWorkflowTemplate;
           break;
         }
+        if (lastTemplate.step === step) return 0;
         console.log(
           `Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan
         );
@@ -118,10 +119,8 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 workflow_template = checkWorkflowTemplate;
                 returnObj.userIds = realRecieveUser;
                 break;
-              } else
-                console.log(
-                  `Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red
-                );
+              } else console.log(`Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red
+              );
               console.log(returnObj);
               break;
             } else {

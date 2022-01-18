@@ -67,6 +67,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           workflow_template = checkWorkflowTemplate;
           break;
         }
+        if (lastTemplate.step === step) return 0;
         console.log(
           `Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan
         );

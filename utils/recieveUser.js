@@ -119,10 +119,8 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
                 workflow_template = checkWorkflowTemplate;
                 returnObj.userIds = realRecieveUser;
                 break;
-              } else
-                console.log(
-                  `Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red
-                );
+              } else console.log(`Энэ хэрэглэгч дээр хүсэлт ирсэн байсан тул алгаслаа`.red
+              );
               console.log(returnObj);
               break;
             } else {

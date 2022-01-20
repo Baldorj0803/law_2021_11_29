@@ -100,8 +100,8 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   //нууц үг шалгах
-  // const ok = await user.checkPassword(password);
-  const ok = true;
+   const ok = await user.checkPassword(password);
+//  const ok = true;
 
   if (!ok) {
     throw new Error("Утасны дугаар нууц үг буруу байнаa", 401);

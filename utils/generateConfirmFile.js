@@ -73,6 +73,8 @@ module.exports = asyncHandler(async (req, itemId) => {
     let ccx = uResult.filter(i => (i.organizationId === 4));
     let ohin = uResult.filter(i => (i.organizationId === 7 || i.organizationId === 6 || i.organizationId === 5));
     let songon = uResult.filter(i => (i.workflowTypeId === 2));
+    let bichighereg = uResult.filter(i => (i.organizationId === 72));
+
 
     let h12 = (huuli.length > 0) ? "Тийм" : "Үгүй";
     let h22 = (gazriin.length > 0) ? "Тийм" : "Үгүй";
@@ -81,6 +83,7 @@ module.exports = asyncHandler(async (req, itemId) => {
     let h52 = (ded.length > 0) ? "Тийм" : "Үгүй";
     let h62 = (ccx.length > 0) ? "Тийм" : "Үгүй";
     let h72 = (tergvvn.length > 0) ? "Тийм" : "Үгүй";
+    bichighereg = (bichighereg.length > 0) ? "Тийм" : "Үгүй";
 
     songon = (songon.length > 0) ? "Тийм" : "Үгүй";
     let fullName = user.name;
@@ -104,6 +107,7 @@ module.exports = asyncHandler(async (req, itemId) => {
             h7: h72,
             date: new Date(),
             organization: fullName,
+            bichighereg: bichighereg
         });
     } else {
         doc.render({
@@ -124,6 +128,7 @@ module.exports = asyncHandler(async (req, itemId) => {
             h7: h72,
             date: new Date(),
             username: fullName,
+            bichighereg: bichighereg
         });
     }
 

@@ -2,10 +2,13 @@ const nodemailer = require("nodemailer");
 const fs = require('fs');
 const Hogan = require('hogan.js')
 let template = fs.readFileSync("./views/email.hjs", "utf-8");
+let template1 = fs.readFileSync("./views/passwordLink.hjs", "utf-8");
 let compiledTemplate = Hogan.compile(template);
+let compiledTemplate1 = Hogan.compile(template1);
 
 // async..await is not allowed in global scope, must use a wrapper
 const sendEmail = async (options) => {
+
 
     // let transporter = nodemailer.createTransport({
     //     host: "smtp.mailtrap.io",
@@ -30,7 +33,7 @@ const sendEmail = async (options) => {
         from: process.env.SMTP_USERNAME, // sender address
         to: options.to,
         subject: options.subject,
-        html: (options.type === 'changePassword') ? options.message : compiledTemplate.render(options.message),
+        html: (options.type === 'changePassword') ? compiledTemplate1.render(options.message) : compiledTemplate.render(options.message),
     });
 
     // console.log("Message sent: %s", info.messageId);

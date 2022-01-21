@@ -29,9 +29,5 @@ router.route('/items/:itemId/request/:requestId/subFile/:file').get(authorize, d
 router.route('/items/:itemId/:fileName').get(authorize, getContractIConfirm);
 //Гэрээний хүсэлтэд засвар баталсан/цуцалсан/ хүн тухайн гэрээг татах
 router.route('/items/:itemId/subFile/:fileName').get(authorize, getSubFileIConfirm);
-//Батлагдсан гэрээний pdf татах
-router.route("/item/:itemId/pdf/:fileName").get(authorize, approvedContractPdf);
-//Миний батлагдсан гэрээний pdf татах
-router.route("/mycontract/:itemId/pdf").get(authorize, myApprovedContractPdf);
 
 module.exports = router;

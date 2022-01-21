@@ -22,6 +22,10 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    icon: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     orderNo: {
       type: DataTypes.INTEGER(10).UNSIGNED,
       allowNull: false,

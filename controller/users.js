@@ -18,14 +18,15 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
   let query = {};
-  if (req.query) {
-    let key = Object.keys(req.query);
-    let value = Object.values(req.query);
-    query.where = {};
-    key.map((k, i) => {
-      query.where[k] = {};
-      query.where[k][Op.like] = `%${value[i]}%`;
-    });
+  if (req.query.value) {
+    let value = req.query.value
+    query.where = {
+      [Op.or]: {
+        name: { [Op.like]: `%${value}%` },
+        mobile: { [Op.like]: `%${value}%` },
+        email: { [Op.like]: `%${value}%` },
+      }
+    };
   }
 
   const pagination = await paginate(page, limit, req.db.users, query);
@@ -46,7 +47,10 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
   }
   //password талбарыг дамжуулахгүй
   query["attributes"] = { exclude: ["password"] };
-  query["include"] = { model: req.db.organizations };
+  query["include"] = {
+    model: req.db.organizations,
+    // ...(req.query.value !== "" && { where: { name: { [Op.like]: `%${req.query.value}%` } } }),
+  };
 
   const users = await req.db.users.findAll(query);
 

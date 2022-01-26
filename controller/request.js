@@ -60,6 +60,8 @@ exports.getrequests = asyncHandler(async (req, res, next) => {
     mainQuery = mainQuery + ` and r.modifiedBy=${req.userId}`
   } else throw new MyError("Төлөвт тохирох нөхцөл олдсонгүй, Системийн админд хандана уу?");
 
+  mainQuery = mainQuery + ' order by r.createdAt desc '
+
   const [uResult, uMeta] = await req.db.sequelize.query(mainQuery);
 
 

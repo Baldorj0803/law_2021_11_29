@@ -84,7 +84,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           );
           while (
             checkedOrg.roleId < itemCreatedUser.roleId &&
-            checkedOrg.parent_id !== 0
+            checkedOrg.parent_id >= 0
           ) {
             console.log(checkedOrg.id + ":Дээр шалгалаа");
             console.log(checkedOrg.roleId + "===" + checkWorkflowTemplate.roleId);

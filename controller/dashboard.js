@@ -28,13 +28,27 @@ exports.totalStat = asyncHandler(async (req, res, next) => {
 
 exports.getRequestProcess = asyncHandler(async (req, res, next) => {
 
-    let query = `select o.name,count(u.organizationId) as total
-    from (select * from request where reqStatusId=${variable.PENDING} and modifiedBy is null) as r
+    // let query = `select o.name,count(u.organizationId) as total
+    // from (select * from request where reqStatusId=${variable.PENDING} and modifiedBy is null) as r
+    // left join recieveusers ru on r.id = ru.requestId
+    // left join users u on ru.userId = u.id
+    // left join organizations o on u.organizationId = o.id
+    // group by o.id
+    // order by o.id asc;`;
+
+    let query = ` select o.id,o.name,aa.total
+    from workfloworganizations wo
+	left join organizations o on wo.organizationId=o.id or o.roleId in (1,2)
+    left join (
+    select u.organizationId,count(u.organizationId) as total
+    from request r 
     left join recieveusers ru on r.id = ru.requestId
     left join users u on ru.userId = u.id
-    left join organizations o on u.organizationId = o.id
-    group by o.id
-    order by o.id asc;`;
+    where r.reqStatusId=${variable.PENDING} and r.modifiedBy is null
+    group by u.organizationId
+    ) as aa on aa.organizationId=o.id
+	group by o.id
+	order by o.roleId, o.id`
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 
 
@@ -94,7 +108,7 @@ exports.getItemDetail = asyncHandler(async (req, res, next) => {
     left join req_status rs on i.reqStatusId=rs.id
     where rs.id not in (${variable.CANCELED},${variable.DRAFT})  
     order by i.updatedAt desc
-    limit 10;`
+    limit 20;`
 
     const [uResult, uMeta] = await req.db.sequelize.query(query);
 

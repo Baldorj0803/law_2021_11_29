@@ -44,7 +44,7 @@ const generateConfirmFile = require("./utils/generateConfirmFile");
 const app = express();
 app.set("view engine", "hjs");
 
-var whitelist = [process.env.WHITELIST];
+var whitelist = process.env.WHITELIST.split(", ");
 var corsOptions = {
   origin: function (origin, callback) {
     console.log(origin);

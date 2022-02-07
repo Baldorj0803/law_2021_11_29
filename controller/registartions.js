@@ -4,7 +4,6 @@ const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 const { Op } = require("sequelize");
 const { saveFIle } = require("../utils/saveFile");
-const slugify = require('slugify')
 const path = require('path')
 
 exports.getregistrations = asyncHandler(async (req, res, next) => {

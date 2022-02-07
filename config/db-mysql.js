@@ -43,6 +43,8 @@ const models = [
   require("../models/menus"),
   require("../models/recieveUsers"),
   require("../models/workfloawOrganizations"),
+  require("../models/log"),
+  require("../models/contractTypes"),
 ];
 
 models.forEach((model) => {

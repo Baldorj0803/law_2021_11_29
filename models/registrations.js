@@ -13,7 +13,7 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
-      contractType: {
+      contractTypeId: {
         type: DataTypes.INTEGER(10).UNSIGNED,
         allowNull: false,
         references: {

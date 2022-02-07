@@ -2,8 +2,6 @@ const fs = require("fs");
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
-const { Op } = require("sequelize");
-const { saveFIle } = require("../utils/saveFile");
 const path = require('path')
 
 exports.getregistrations = asyncHandler(async (req, res, next) => {
@@ -48,6 +46,8 @@ exports.getregistrations = asyncHandler(async (req, res, next) => {
       ]);
   }
 
+  query.include = { model: req.db.contractTypes, include: { model: req.db.company } }
+
   const registrations = await req.db.registrations.findAll(query);
 
   res.status(200).json({
@@ -72,7 +72,7 @@ exports.createregistration = asyncHandler(async (req, res, next) => {
   if (checkUnique) throw new MyError("Гэрээний дугаар давхцаж байна", 400)
 
   let contractType = await req.db.contractTypes.findOne({
-    where: { id: req.body.contractType }
+    where: { id: req.body.contractTypeId }
   });
   if (!contractType) throw new MyError("Гэрээний төрөл сонгогдоогүй байна", 400);
   contractType = await req.db.contractTypes.findOne({
@@ -108,7 +108,7 @@ exports.updateregistration = asyncHandler(async (req, res, next) => {
 
   if (req.files !== null && req.files.fileName) {
     let contractType = await req.db.contractTypes.findOne({
-      where: { id: registration.contractType }
+      where: { id: registration.contractTypeId }
     });
 
     if (!contractType) throw new MyError("Гэрээний төрөл сонгогдоогүй байна", 400);
@@ -128,7 +128,7 @@ exports.updateregistration = asyncHandler(async (req, res, next) => {
     message = message + "Файл амжилттай хуулагдлаа. "
 
     req.body.fileName = file.name;
-  } else if ((req.files === null || !req.files.fileName) && req.body.contractType != registration.contractType && req.body.number) {
+  } else if ((req.files === null || !req.files.fileName) && req.body.contractTypeId != registration.contractTypeId && req.body.number) {
     //req.body.contractType != registration.contractType төрөл шалгахгүй нөхцөл ажиллах ёстой
     throw new MyError("Файл оруулна уу", 400);
 
@@ -160,11 +160,10 @@ exports.updateregistration = asyncHandler(async (req, res, next) => {
     // }
 
   }
-  // C:\Users\DELL\project\back\law_2021_11_29\public\contracts\Amerik-US
-  console.log(typeof req.body.contractType);
-  console.log(req.body.contractType);
-  console.log(registration.contractType);
-  console.log(typeof registration.contractType);
+  console.log(typeof req.body.contractTypeId);
+  console.log(req.body.contractTypeId);
+  console.log(registration.contractTypeId);
+  console.log(typeof registration.contractTypeId);
   if (req.body.subCode) req.body.subCode = parseInt(req.body.subCode);
 
   registration = await registration.update(req.body);

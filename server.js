@@ -150,6 +150,12 @@ db.organizations.hasMany(db.workflowOrganizations);
 db.workflowOrganizations.belongsTo(db.workflow_templates);
 db.workflow_templates.hasMany(db.workflowOrganizations);
 
+db.registrations.belongsTo(db.contractTypes);
+db.contractTypes.hasMany(db.registrations);
+
+db.contractTypes.belongsTo(db.company);
+db.company.hasMany(db.contractTypes);
+
 app.get("/test", asyncHandler(async (req, res, next) => {
   // let c = await generateConfirmFile(req, 10);
   let c = await email({

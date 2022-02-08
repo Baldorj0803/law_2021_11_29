@@ -2,6 +2,7 @@
 const asyncHandler = require('../middleware/asyncHandle');
 const MyError = require("../utils/myError")
 const path = require('path')
+const fs = require('fs')
 
 
 exports.saveFIle = asyncHandler(async (file, folderName, addName) => {
@@ -76,3 +77,26 @@ exports.checkFile = asyncHandler(async (file, addName) => {
 
 	return file;
 })
+
+exports.ensureDirectoryExistence = (filePath) => {
+	let dirname = path.dirname(filePath);
+	if (fs.existsSync(dirname)) {
+		return true;
+	}
+	this.ensureDirectoryExistence(dirname);
+	fs.mkdirSync(dirname);
+}
+
+exports.copy = () => {
+	var readStream = fs.createReadStream(oldPath);
+	var writeStream = fs.createWriteStream(newPath);
+
+	readStream.on('error', callback);
+	writeStream.on('error', callback);
+
+	readStream.on('close', function () {
+		fs.unlink(oldPath, callback);
+	});
+
+	readStream.pipe(writeStream);
+}

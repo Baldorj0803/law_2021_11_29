@@ -30,6 +30,7 @@ const downloadRoutes = require("./routes/download");
 const registrationRoutes = require("./routes/registrations");
 const menusRoutes = require("./routes/menus");
 const uploadRoutes = require("./routes/upload");
+const utilsRoutes = require('./routes/utils')
 
 const injectDb = require("./middleware/injectDb");
 
@@ -89,6 +90,7 @@ app.use("/api/v1/download", downloadRoutes);
 app.use("/api/v1/registrations", registrationRoutes);
 app.use("/api/v1/menus", menusRoutes);
 app.use("/api/v1/upload", uploadRoutes);
+app.use("/api/v1/utils", utilsRoutes);
 
 app.use(errorHandler);
 
@@ -147,6 +149,12 @@ db.organizations.hasMany(db.workflowOrganizations);
 
 db.workflowOrganizations.belongsTo(db.workflow_templates);
 db.workflow_templates.hasMany(db.workflowOrganizations);
+
+db.registrations.belongsTo(db.contractTypes);
+db.contractTypes.hasMany(db.registrations);
+
+db.contractTypes.belongsTo(db.company);
+db.company.hasMany(db.contractTypes);
 
 app.get("/test", asyncHandler(async (req, res, next) => {
   // let c = await generateConfirmFile(req, 10);

@@ -9,12 +9,21 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         autoIncrement: true,
       },
+      fileName: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      contractTypeId: {
+        type: DataTypes.INTEGER(10).UNSIGNED,
+        allowNull: false,
+        references: {
+          model: "contractTypes",
+          key: "id",
+        },
+      },
       customerName: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        // set(val) {
-        //   this.setDataValue(trim(val));
-        // }
       },
       summery: {
         type: DataTypes.TEXT,
@@ -25,15 +34,16 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
       },
       number: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(255),
         allowNull: false,
+        unique: true
       },
       dateOfContract: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
       },
       validDate: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
       },
       isFinished: {
@@ -55,7 +65,7 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
       },
       totalAmount: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         allowNull: false,
       },
       key: {

@@ -240,9 +240,8 @@ exports.sendReq = asyncHandler(async (req, res, next) => {
 });
 //Цуцлагдсан хүсэлтийг дахин илгээхэд ашиглагдана
 exports.updateitem = asyncHandler(async (req, res, next) => {
-  console.log(req.files);
   let msg = "";
-  if (!req.files.file) {
+  if (req.files === null || !req.files.file) {
     throw new MyError("Гэрээгээ оруулна уу", 400);
   }
 

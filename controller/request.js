@@ -80,7 +80,7 @@ exports.getrequest = asyncHandler(async (req, res, next) => {
 
   if (!request.itemId) throw new MyError(`${request.id} тай хүсэлтэнд ямар нэгэн гэрээ байхгүй байна`);
 
-  let query = `select r.id, c.name as company,i.name as gereeNer,i.subFile,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,
+  let query = `select r.id, c.name as company,i.name as gereeNer,i.subFile,i.file,i.brfMean,i.custInfo,i.wage,i.execTime,i.description,i.warrantyPeriod,i.trmCont,i.isIncludeBudget,
   u.name,u.mobile,u.profession,o.name as gazarNegj,r.modifiedBy ,r.suggestion,w.min,W.max,cur.code as curName,i.id as itemId,i.subFile
   from recieveusers ru
   left join request r on ru.requestId=r.id

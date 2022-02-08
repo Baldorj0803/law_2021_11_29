@@ -105,6 +105,11 @@ module.exports = function (sequelize, DataTypes) {
           key: "id",
         },
       },
+      isIncludeBudget: {
+        type: DataTypes.ENUM,
+        values: ["0", "1"],
+        defaultValue: "0",
+      },
     },
     {
       tableName: "items",

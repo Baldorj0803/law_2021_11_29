@@ -110,6 +110,9 @@ module.exports = function (sequelize, DataTypes) {
         values: ["0", "1"],
         defaultValue: "0",
       },
+      pYearTTService: {
+        type: DataTypes.STRING(255),
+      },
     },
     {
       tableName: "items",

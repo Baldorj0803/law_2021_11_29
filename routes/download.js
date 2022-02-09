@@ -8,7 +8,8 @@ const {
   getContractIConfirm,
   getSubFileIConfirm,
   downloadMyItemRequestFile,
-  downloadMyItemRequestSubFile
+  downloadMyItemRequestSubFile,
+  downloadRegistrationsFile
 } = require("../controller/download");
 const { authorize } = require("../middleware/protect");
 
@@ -29,5 +30,7 @@ router.route('/items/:itemId/request/:requestId/subFile/:file').get(authorize, d
 router.route('/items/:itemId/:fileName').get(authorize, getContractIConfirm);
 //Гэрээний хүсэлтэд засвар баталсан/цуцалсан/ хүн тухайн гэрээг татах
 router.route('/items/:itemId/subFile/:fileName').get(authorize, getSubFileIConfirm);
+//Гэрээний бүртгэл татах
+router.route('/registrations/:id').get(authorize, downloadRegistrationsFile);
 
 module.exports = router;

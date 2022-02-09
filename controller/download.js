@@ -193,3 +193,26 @@ exports.downloadMyItemRequestSubFile = asyncHandler(async (req, res, next) => {
   });
 });
 
+
+exports.downloadRegistrationsFile = asyncHandler(async (req, res, next) => {
+
+  if (!req.params.id) {
+    throw new MyError("Файл эсвэл хүсэлт олдсонгүй", 400);
+  }
+
+  let registration = await req.db.registrations.findByPk(req.params.id);
+  if (!registration) throw new MyError(`${req.params.file} файлыг татах боломжгүй байна`, 400);
+
+  let type = await req.db.contractTypes.findOne({
+    where: { id: registration.contractTypeId }
+  });
+
+  type = await req.db.contractTypes.findOne({
+    where: { id: type.parentId }
+  });
+  res.download(process.env.FILE_PATH + `/contracts/${type.slug}/${registration.fileName}`, function (err) {
+    if (err) res.sendStatus(204);
+    if (err) console.log(err);
+  });
+});
+

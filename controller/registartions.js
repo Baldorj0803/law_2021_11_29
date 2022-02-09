@@ -2,7 +2,8 @@ const fs = require("fs");
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
-const path = require('path')
+const path = require('path');
+const { ensureDirectoryExistence, copy } = require("../utils/saveFile");
 
 exports.getregistrations = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
@@ -81,6 +82,12 @@ exports.createregistration = asyncHandler(async (req, res, next) => {
 
   let file = req.files.fileName;
   if (!file.mimetype.endsWith("pdf")) throw new MyError("Та зөвхөн pdf file оруулна уу", 400);
+  file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
+  file.mv(`./public/contracts/backup/${file.name}`, (err) => {
+    if (err) {
+      throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+    }
+  });
   file.name = `${req.body.number}${path.parse(file.name).ext}`;
   file.mv(`./public/contracts/${contractType.slug}/${file.name}`, (err) => {
     if (err) {
@@ -101,69 +108,100 @@ exports.createregistration = asyncHandler(async (req, res, next) => {
 exports.updateregistration = asyncHandler(async (req, res, next) => {
   let message = "";
   let registration = await req.db.registrations.findByPk(req.params.id);
-
-  if (!registration) {
-    throw new MyError(`${req.params.id} id тэй бүртгэл олдсонгүй.`, 400);
-  }
-
-  if (req.files !== null && req.files.fileName) {
-    let contractType = await req.db.contractTypes.findOne({
+  let oldType = null, newType = null
+  if (req.body.contractTypeId) {
+    oldType = await req.db.contractTypes.findOne({
       where: { id: registration.contractTypeId }
     });
-
-    if (!contractType) throw new MyError("Гэрээний төрөл сонгогдоогүй байна", 400);
-    contractType = await req.db.contractTypes.findOne({
-      where: { id: contractType.parentId }
+    newType = await req.db.contractTypes.findOne({
+      where: { id: req.body.contractTypeId }
     });
 
-    let file = req.files.fileName;
-    if (!file.mimetype.endsWith("pdf")) throw new MyError("Та зөвхөн pdf file оруулна уу", 400);
-    if (req.body.number) registration.number = req.body.number;
-    file.name = `${registration.number}${path.parse(file.name).ext}`;
-    file.mv(`./public/contracts/${contractType.slug}/${file.name}`, (err) => {
-      if (err) {
-        throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+    if (!oldType || !newType) throw new MyError("Гэрээний төрөл байхгүй байна", 400);
+    oldType = await req.db.contractTypes.findOne({
+      where: { id: oldType.parentId }
+    });
+    newType = await req.db.contractTypes.findOne({
+      where: { id: newType.parentId }
+    });
+
+
+    if (!registration) {
+      throw new MyError(`${req.params.id} id тэй бүртгэл олдсонгүй.`, 400);
+    }
+
+    if (req.files !== null && req.files.fileName) {
+
+      let file = req.files.fileName;
+      if (!file.mimetype.endsWith("pdf")) throw new MyError("Та зөвхөн pdf file оруулна уу", 400);
+
+      file.name = `file_${Date.now()}${path.parse(file.name).ext}`;
+      file.mv(`./public/contracts/backup/${file.name}`, (err) => {
+        if (err) {
+          throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+        }
+      });
+
+      if (!req.body.number) throw new MyError("Дугаар байхгүй байна", 400);
+
+      let oldPath = `./public/contracts/${oldType.slug}/${registration.fileName}`
+      let mimetype = registration.fileName.toString().split(".");
+      mimetype = mimetype[mimetype.length - 1]
+      let newPath = `./public/contracts/${newType.slug}/${req.body.number}.${mimetype}`
+
+      console.log(oldPath);
+      console.log(newPath);
+
+      file.mv(newPath, async (err) => {
+        if (err) {
+          throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+        } else {
+          console.log('success');
+          f = `${req.body.number}.${mimetype}`;
+          await registration.update({ fileName: f });
+        }
+      });
+      message = message + "Файл амжилттай хуулагдлаа. "
+
+      if (oldPath != newPath) {
+        fs.unlink(oldPath, (err) => {
+          if (err) {
+            throw new MyError("Файлыг устгах явцад алдаа гарлаа", 400);
+            // return;
+          }
+        });
       }
-    });
-    message = message + "Файл амжилттай хуулагдлаа. "
 
-    req.body.fileName = file.name;
-  } else if ((req.files === null || !req.files.fileName) && req.body.contractTypeId != registration.contractTypeId && req.body.number) {
-    //req.body.contractType != registration.contractType төрөл шалгахгүй нөхцөл ажиллах ёстой
-    throw new MyError("Файл оруулна уу", 400);
+    } else {
+      let oldPath = `./public/contracts/${oldType.slug}/${registration.fileName}`
+      let mimetype = registration.fileName.toString().split(".");
+      mimetype = mimetype[mimetype.length - 1]
+      let newPath = `./public/contracts/${newType.slug}/${req.body.number}.${mimetype}`
+      console.log(oldPath);
+      console.log(newPath);
+      if (oldPath != newPath) {
+        ensureDirectoryExistence(newPath)
 
-    // let oldType = await req.db.contractTypes.findOne({
-    //   where: { id: req.body.contractType }
-    // });
-    // let newType = await req.db.contractTypes.findOne({
-    //   where: { id: registration.contractType }
-    // });
-
-    // if (oldType.parentId !== newType.parentId) {
-    //   if (!oldType || !newType) throw new MyError("Гэрээний төрөл байхгүй байна", 400);
-    //   oldType = await req.db.contractTypes.findOne({
-    //     where: { id: oldType.parentId }
-    //   });
-    //   newType = await req.db.contractTypes.findOne({
-    //     where: { id: newType.parentId }
-    //   });
-    //   let oldPath = `./public/contracts/${oldType.slug}/${registration.fileName}`
-    //   let newPath = `./public/contracts/${newType.slug}/${registration.fileName}`
-    //   console.log(oldPath);
-    //   console.log(newPath);
-
-    //   fs.rename(oldPath, newPath, function (err) {
-    //     if (err) throw err
-    //     console.log('Successfully renamed - AKA moved!')
-    //   })
-    // 
-    // }
+        fs.rename(oldPath, newPath, async function (err) {
+          if (err) {
+            if (err.code === 'EXDEV') {
+              copy()
+            } else {
+              // callback(err);
+              console.log(err);
+              throw new MyError("Файлыг устгах явцад алдаа гарлаа", 400);
+            }
+            return;
+          } else {
+            console.log('success');
+            f = `${req.body.number}.${mimetype}`;
+            await registration.update({ fileName: f });
+          }
+        });
+      }
+    }
 
   }
-  console.log(typeof req.body.contractTypeId);
-  console.log(req.body.contractTypeId);
-  console.log(registration.contractTypeId);
-  console.log(typeof registration.contractTypeId);
   if (req.body.subCode) req.body.subCode = parseInt(req.body.subCode);
 
   registration = await registration.update(req.body);
@@ -174,6 +212,8 @@ exports.updateregistration = asyncHandler(async (req, res, next) => {
     message,
     data: registration,
   });
+
+
 });
 
 exports.deleteregistration = asyncHandler(async (req, res, next) => {
@@ -185,7 +225,7 @@ exports.deleteregistration = asyncHandler(async (req, res, next) => {
 
 
   let contractType = await req.db.contractTypes.findOne({
-    where: { id: registration.contractType }
+    where: { id: registration.contractTypeId }
   });
 
   if (!contractType) throw new MyError("Гэрээний төрөл сонгогдоогүй байна", 400);
@@ -197,7 +237,7 @@ exports.deleteregistration = asyncHandler(async (req, res, next) => {
 
   fs.unlink(`./public/contracts/${contractType.slug}/${registration.fileName}`, (err) => {
     if (err) {
-      console.error(err);
+      // throw new MyError("Файлыг устгах явцад алдаа гарлаа", 400);
       return;
     }
   });

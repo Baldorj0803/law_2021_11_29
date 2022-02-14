@@ -1,13 +1,16 @@
 const fs = require("fs");
-const MyError = require("../utils/myError");
+const { Op } = require("sequelize");
 const asyncHandler = require("express-async-handler");
+const MyError = require("../utils/myError");
 const paginate = require("../utils/paginate");
 const path = require('path');
 const { ensureDirectoryExistence, copy } = require("../utils/saveFile");
 
 exports.getregistrations = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
+  console.log(req.query)
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+
   const sort = req.query.sort;
   let select = req.query.select;
 
@@ -18,21 +21,30 @@ exports.getregistrations = asyncHandler(async (req, res, next) => {
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
 
   let query = {}
+  let includeQuery = {}
   if (req.query) {
     let key = Object.keys(req.query)
     let value = Object.values(req.query)
-    console.log(key, value);
     query.where = {}
     key.map((k, i) => {
-      query.where[k] = {}
-      query.where[k] = value[i]
+      console.log("K:", k);
+      if (k === 'companyId' || k === 'name') {
+        // includeQuery.push({ [k]: value[i] });
+        includeQuery = { ...includeQuery, [k]: { [Op.like]: `%${value[i]}%` } }
+      } else {
+        query.where[k] = {}
+        let isArr = value[i].split(' ');
+        let isDate = value[i].split(',');
+        if (isArr.length > 1) {
+          query.where[k] = { [Op.in]: isArr };
+        } else if (isDate.length == 2) {
+          query.where[k] = { [Op.between]: isDate };
+        } else query.where[k] = { [Op.like]: `%${value[i]}%` };
+      }
     })
   }
 
 
-  const pagination = await paginate(page, limit, req.db.registrations, query);
-
-  query = { ...query, offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;
@@ -47,7 +59,16 @@ exports.getregistrations = asyncHandler(async (req, res, next) => {
       ]);
   }
 
-  query.include = { model: req.db.contractTypes, include: { model: req.db.company } }
+  query.include = { model: req.db.contractTypes, ...(Object.keys(includeQuery).length > 0 && { where: includeQuery }), include: { model: req.db.company } }
+
+  console.log("query:", query);
+  console.log("includeQuery:", includeQuery);
+
+  let pagination = null;
+  if (page && limit) {
+    pagination = await paginate(page, limit, req.db.registrations, query);
+    query = { ...query, offset: pagination.start - 1, limit };
+  }
 
   const registrations = await req.db.registrations.findAll(query);
 

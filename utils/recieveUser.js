@@ -189,7 +189,12 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       }
     )
 
-    let orgIds = orgs.map(i => i.organizationId);
+    let orgIds = orgs.map(i => {
+      if (i.organizationId === 1) {
+        return 3;
+      } else return i.organizationId
+    });
+    console.log(`тэргүүн байсан тул org солив.`.bgYellow);
     let recieveUser = await req.db.users.findAll({
       where: {
         organizationId: orgIds,
@@ -216,9 +221,12 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       );
       console.log(`${parent.roleId}`.bgMagenta);
       if (parent.roleId === workflow_template.roleId) {
+        let searchId = parent.id
+        if (searchId === 1) searchId = 3;
+        console.log(`тэргүүн байсан тул org солив.==${searchId}`.bgYellow);
         let recieveUser = await req.db.users.findAll({
           where: {
-            organizationId: parent.id,
+            organizationId: searchId,
           },
           raw: true
         });

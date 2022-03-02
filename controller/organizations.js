@@ -1,4 +1,5 @@
 const MyError = require("../utils/myError");
+const { Op } = require("sequelize");
 const asyncHandler = require("express-async-handler");
 const paginate = require("../utils/paginate");
 
@@ -16,12 +17,25 @@ exports.getorganizations = asyncHandler(async (req, res, next) => {
 
   let query = {};
   if (req.query) {
-    query.where = req.query;
+    let key = Object.keys(req.query)
+    let value = Object.values(req.query)
+    query.where = {}
+    key.map((k, i) => {
+      query.where[k] = {}
+      let isArr = value[i].split(' ');
+      if (isArr.length > 1) {
+        if (isArr.at(0) === "-") {
+          isArr = isArr.filter((i) => i !== "-");
+          query.where[k] = { [Op.notIn]: isArr };
+        } else query.where[k] = { [Op.in]: isArr };
+      } else query.where[k] = { [Op.like]: `%${value[i]}%` };
+
+    })
   }
 
   const pagination = await paginate(page, limit, req.db.organizations, query);
 
-  query = { offset: pagination.start - 1, limit };
+  query = { ...query, offset: pagination.start - 1, limit };
 
   if (select) {
     query.attributes = select;

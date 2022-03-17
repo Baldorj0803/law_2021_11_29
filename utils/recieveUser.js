@@ -72,7 +72,6 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           `Өмнөх алхамд энэ алхам дээр очсон тул алгаслаа,Ерөнхий`.bgCyan
         );
       } else if (checkWorkflowTemplate.roleId && orgCnt === 0) {
-        console.log("----------------------org zaaj ogson");
         //ерөнхийгөөр зааж өгсөн
         //иймээс үүсгэсэн хэрэглэгчийн роль оос олно
         if (checkWorkflowTemplate.roleId < itemCreatedUser.roleId) {

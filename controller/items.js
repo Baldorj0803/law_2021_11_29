@@ -55,15 +55,15 @@ exports.getitems = asyncHandler(async (req, res, next) => {
   });
 });
 exports.getConfirmedItems = asyncHandler(async (req, res, next) => {
-  let query = `SELECT i.id,i.name,i.file,i.trmCont,i.warrantyPeriod,i.approvedFilePDF,i.reqStatusId,i.createdAt,c.name as companyName, u.name as userName,
-	o.name as orgName,wt.name as workflowTypeName,wt.id as workflowTypeId,c.id as companyId
+  let query = `SELECT i.id,i.name,i.file,i.trmCont,i.warrantyPeriod,i.subFile,i.reqStatusId,i.createdAt,c.name as companyName, u.name as userName,
+	o.name as orgName,wt.name as workflowTypeName,wt.id as workflowTypeId,c.id as companyId, i.isIncludeBudget
 	FROM items i 
 	left join workflows w on i.workflowId=w.id
 	left join workflowtype wt on w.workflowTypeId=wt.id
 	left join company c on w.companyId=c.id
 	left join users u on i.userId=u.id
 	left join organizations o on u.organizationId=o.id
-	where i.reqStatusId=5 and i.approvedFilePDF is not null`;
+	where i.reqStatusId=5 ;`;
   const [uResult, uMeta] = await req.db.sequelize.query(query);
 
   res.status(200).json({

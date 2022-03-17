@@ -92,7 +92,7 @@ exports.getItemDetail = asyncHandler(async (req, res, next) => {
     // limit 10;`
 
     let query = `select i.id, i.createdAt,i.name as itemName,
-    rs.slug,rs.name as statusName,r.*
+    rs.slug,rs.name as statusName,r.*,u.name as uName,o.name as oName
     from items i
     left join (
 		select  r.itemId,u.profession,u.lastname as rlastname,u.name as ruserName,
@@ -106,6 +106,8 @@ exports.getItemDetail = asyncHandler(async (req, res, next) => {
 		group by r.itemId
     ) as r on r.itemId=i.id
     left join req_status rs on i.reqStatusId=rs.id
+    left join users u on i.userId = u.id 
+    left join organizations o on u.organizationId=o.id
     where rs.id not in (${variable.CANCELED},${variable.DRAFT})  
     order by i.updatedAt desc
     limit 20;`

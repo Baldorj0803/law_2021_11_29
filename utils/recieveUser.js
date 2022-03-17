@@ -82,6 +82,8 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           let checkedOrg = await req.db.organizations.findByPk(
             myorganization.parent_id
           );
+
+          console.log(`${checkedOrg.roleId}-${itemCreatedUser.roleId}-${checkedOrg.parent_id}`);
           while (
             checkedOrg.roleId < itemCreatedUser.roleId &&
             checkedOrg.parent_id >= 0

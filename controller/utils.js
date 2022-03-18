@@ -1,6 +1,7 @@
 
 const MyError = require("../utils/myError");
 const asyncHandler = require("express-async-handler");
+const email = require('../utils/email')
 
 
 exports.getcontracttypes = asyncHandler(async (req, res, next) => {
@@ -50,5 +51,23 @@ exports.getcontracttypes = asyncHandler(async (req, res, next) => {
         code: res.statusCode,
         message: "success",
         data: contractTypes,
+    });
+});
+
+
+
+exports.sendEmail = asyncHandler(async (req, res, next) => {
+    if (!req.body.to) throw new MyError(`Илгээх email оруулна уу /to/`, 400);
+
+    let info = await email({
+        subject: 'Хуулийн гэрээ байгуулах тухай',
+        to: req.body.to,
+    })
+    console.log(`${JSON.stringify(info.accepted)} хэрэглэгчид емэйл илгээгдлээ`.green);
+
+    res.status(200).json({
+        code: res.statusCode,
+        message: "success",
+        data: info,
     });
 });

@@ -64,8 +64,8 @@ app.use(
     createParentPath: true,
   })
 );
-//app.use(cors());
-app.use(cors(corsOptions));
+app.use(cors());
+//app.use(cors(corsOptions));
 // app.use("/static", express.static(path.join(__dirname, "public")));
 app.use(logger);
 app.use(injectDb(db));

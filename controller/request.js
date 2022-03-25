@@ -354,6 +354,12 @@ exports.updaterequest = asyncHandler(async (req, res, next) => {
           }
         });
 
+        if (subFile) subFile.mv(`./public/files/${subFile.name}`, (err) => {
+          if (err) {
+            throw new MyError("Файлыг хуулах явцад алдаа гарлаа" + err.message, 400);
+          }
+        });
+
         new_request = await req.db.request.create(new_request);
         recieveusers.map(i => {
           new_recieveUsers.push({

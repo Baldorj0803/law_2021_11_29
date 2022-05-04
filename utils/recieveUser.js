@@ -190,7 +190,7 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
         raw: true
       }
     )
-    // let orgIds = orgs.map(i => i.organizationId);
+    let orgIds = orgs.map(i => i.organizationId);
     // Эрх шилжүүлэх код
     // let orgIds = orgs.map(i => {
     //   if (i.organizationId === 1) {

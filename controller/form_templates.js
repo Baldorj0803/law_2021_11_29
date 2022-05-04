@@ -6,47 +6,6 @@ const paginate = require("../utils/paginate");
 const fs = require('fs')
 
 exports.getform_templates = asyncHandler(async (req, res, next) => {
-  let page,limit,pagination="";
-  if(req.query.limit){
-     page = parseInt(req.query.page) || 1;
-     limit = parseInt(req.query.limit) || 100;
-  }
- 
-  const sort = req.query.sort;
-  let select = req.query.select;
-
-  if (select) {
-    select = select.split(" ");
-  }
-
-  ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
-
-  let query = {};
-
-  if (req.query) {
-    query.where = req.query;
-  }
-
-  if(req.query.limit){
-
-    pagination = await paginate(page, limit, req.db.form_templates, query);
-    query = { offset: pagination.start - 1, limit };
-  }
-
-
-
-  if (select) {
-    query.attributes = select;
-  }
-
-  if (sort) {
-    query.order = sort
-      .split(" ")
-      .map((el) => [
-        el.charAt(0) === "-" ? el.substring(1) : el,
-        el.charAt(0) === "-" ? "DESC" : "ASC",
-      ]);
-  }
 
   
   const form_templates = await req.db.form_templates.findAll({
@@ -57,7 +16,6 @@ exports.getform_templates = asyncHandler(async (req, res, next) => {
     code: res.statusCode,
     message: "success",
     data: form_templates,
-    ...(pagination !== "" && { pagination }),
   });
 });
 

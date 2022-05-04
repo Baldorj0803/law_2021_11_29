@@ -48,7 +48,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           }
         )
 
-        // let orgIds = orgs.map(i => i.organizationId);
+        let orgIds = orgs.map(i => i.organizationId);
         //org зааж өгсөн бол заавал дамжина
         // workflow_template = checkWorkflowTemplate
         console.log(

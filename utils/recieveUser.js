@@ -38,7 +38,8 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           step: index,
         },
       });
-
+      
+      //Дамжлага дээр холбоотой албан тушаал байгаагаас шалтгаалж ерөнхийгөөр эсэхийг тодорхойлов
       let orgCnt = await checkWorkflowTemplate.countWorkflowOrganizations();
       if (checkWorkflowTemplate.roleId && orgCnt > 0) {
         let orgs = await checkWorkflowTemplate.getWorkflowOrganizations(
@@ -90,6 +91,13 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
           ) {
             console.log(checkedOrg.id + ":Дээр шалгалаа");
             console.log(checkedOrg.roleId + "===" + checkWorkflowTemplate.roleId);
+
+            //Тэргүүн дэдийн ролийг 1 болсон учир дэд захиралгүй газрууд олж чадахгүй байсан
+            if (checkWorkflowTemplate.roleId===2&&checkedOrg.roleId===1) {
+              checkedOrg.roleId=checkedOrg.roleId;
+              //дараагийн нөхцөлийг биелүүлэхийн тулд
+            }
+
             if (checkedOrg.roleId === checkWorkflowTemplate.roleId) {
               //тухайн тэмплэйт дээрээс хүлээн авах хэрэглэгчийг олох
               console.log(`${checkWorkflowTemplate.id} id-тай тэмплэйтээс хүлээн авах хэрэглэгчийг олно`.yellow);

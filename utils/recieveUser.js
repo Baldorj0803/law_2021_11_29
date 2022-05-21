@@ -152,6 +152,9 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
     return 0;
   }
   if (!workflow_template) {
+    if (returnObj.userIds === null && returnObj.workflowTemplateId === null){
+      return 0;
+    }
     throw new MyError(`Дараагийн шатны дамжлага олдсонгүй`, 400);
   }
   console.log(

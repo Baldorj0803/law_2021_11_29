@@ -94,7 +94,7 @@ exports.getWorkflowTemplate = asyncHandler(async (req, item, step) => {
 
             //Тэргүүн дэдийн ролийг 1 болсон учир дэд захиралгүй газрууд олж чадахгүй байсан
             if (checkWorkflowTemplate.roleId===2&&checkedOrg.roleId===1) {
-              checkedOrg.roleId=checkedOrg.roleId;
+              checkedOrg.roleId=2;
               //дараагийн нөхцөлийг биелүүлэхийн тулд
             }
 

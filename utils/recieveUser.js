@@ -215,13 +215,13 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       attributes: ["organizationId"],
       raw: true,
     });
-    // let orgIds = orgs.map(i => i.organizationId);
+    let orgIds = orgs.map(i => i.organizationId);
     // Эрх шилжүүлэх код
-    let orgIds = orgs.map((i) => {
-      if (i.organizationId === 1) {
-        return 3;
-      } else return i.organizationId;
-    });
+    // let orgIds = orgs.map((i) => {
+    //   if (i.organizationId === 1) {
+    //     return 3;
+    //   } else return i.organizationId;
+    // });
     let recieveUser = await req.db.users.findAll({
       where: {
         organizationId: orgIds,
@@ -252,14 +252,14 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
         (workflow_template.roleId === 2 && parent.roleId === 1)
       ) {
         //Эрх шилжүүлэх код
-        let searchId = parent.id;
-        if (searchId === 8) searchId = 44;
+        // let searchId = parent.id;
+        // if (searchId === 8) searchId = 44;
         // console.log(`тэргүүн байсан тул org солив.==${searchId}`.bgYellow);
         let recieveUser = await req.db.users.findAll({
           where: {
             //Эрх шилжүүлэх код
-            organizationId: searchId,
-            // organizationId: parent.id
+            // organizationId: searchId,
+            organizationId: parent.id
           },
           raw: true,
         });

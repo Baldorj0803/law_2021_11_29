@@ -253,7 +253,7 @@ exports.recieveUser = asyncHandler(async (req, workflow_template, item) => {
       ) {
         //Эрх шилжүүлэх код
         let searchId = parent.id;
-        if (searchId === 3) searchId = 44;
+        if (searchId === 44) searchId = 3;
         // console.log(`тэргүүн байсан тул org солив.==${searchId}`.bgYellow);
         let recieveUser = await req.db.users.findAll({
           where: {

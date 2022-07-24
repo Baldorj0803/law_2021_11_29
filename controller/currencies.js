@@ -15,6 +15,7 @@ exports.getcurrencies = asyncHandler(async (req, res, next) => {
   }
 
   ["select", "sort", "page", "limit"].forEach((el) => delete req.query[el]);
+  
   let query = {}
 
   if (req.query) {
